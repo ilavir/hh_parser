@@ -7,18 +7,23 @@ import argparse
 
 # Function to create and initialize the SQLite database
 def initialize_database():
+
+    # Database filename input without extension (.db)
     database_filename = input('Enter database filename (without extension .db): ')
     if len(database_filename) < 1:
-        database_filename = 'typography.db' # Replace 'your_database.db' with the actual database filename
+        database_filename = '../db/test.db' # database filename by default
     else:
-        database_filename += '.db'
+        database_filename = '../db/' + database_filename + '.db'
 
+    # Connecting to database
     conn = sqlite3.connect(database_filename)
     cursor = conn.cursor()
 
+    # Create vacancies and employers tables if not exists
     create_vacancies_table(cursor)
     create_employers_table(cursor)
     conn.commit()
+
     return conn, cursor
 
 def create_vacancies_table(cursor):
@@ -179,10 +184,10 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
         else:
             employer_hh_id = None
             employer_name = None
-            employer_trusted = None
-            employer_url = None
-            employer_alternate_url = None
-            employer_vacancies_url = None
+            #employer_trusted = None
+            #employer_url = None
+            #employer_alternate_url = None
+            #employer_vacancies_url = None
 
         print(f"{vacancy_name} | {employer_name}")
 
@@ -200,13 +205,16 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
             if existing_employer_id:
                 existing_employer_id = existing_employer_id[0]
             else:
-                cursor.execute('''
-                    INSERT INTO employer (hh_id, name, trusted, url, alternate_url, vacancies_url)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (employer_hh_id, employer_name, employer_trusted, employer_url, employer_alternate_url, employer_vacancies_url))
-                cursor.execute(
-                    'SELECT employer_id FROM employer WHERE hh_id = ?', (employer_hh_id,))
-                existing_employer_id = cursor.fetchone()[0]
+                if vacancy_type['id'] != 'anonymous':
+                    cursor.execute('''
+                        INSERT INTO employer (hh_id, name, trusted, url, alternate_url, vacancies_url)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (employer_hh_id, employer_name, employer_trusted, employer_url, employer_alternate_url, employer_vacancies_url))
+                    cursor.execute(
+                        'SELECT employer_id FROM employer WHERE hh_id = ?', (employer_hh_id,))
+                    existing_employer_id = cursor.fetchone()[0]
+                else:
+                    existing_employer_id = None
 
             cursor.execute('SELECT schedule_id FROM schedule WHERE hh_id = ?', (vacancy_schedule['id'],))
             vacancy_schedule = cursor.fetchone()[0]

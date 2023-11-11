@@ -2,14 +2,18 @@ import requests
 import sqlite3
 
 def initialize_database():
+
+    # Database filename input without extension (.db)
     database_filename = input('Enter database filename (without extension .db): ')
     if len(database_filename) < 1:
-        database_filename = 'typography.db' # Replace 'your_database.db' with the actual database filename
+        database_filename = '../db/test.db' # database filename by default
     else:
-        database_filename += '.db'
+        database_filename = '../db/' + database_filename + '.db'
 
+    # Connect to database
     conn = sqlite3.connect(database_filename)
     cursor = conn.cursor()
+    
     return conn, cursor
 
 def area_table_create():
