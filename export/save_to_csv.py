@@ -126,6 +126,7 @@ with open(csv_file, 'w', newline='') as csvfile:
             else:
                 contacts_formatted_phones = None
         else:
+            continue
             contacts_formatted_name = None
             contacts_formatted_email = None
             contacts_formatted_phones = None
