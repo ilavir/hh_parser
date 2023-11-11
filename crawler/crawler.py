@@ -259,7 +259,7 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
                 updated_vacancy += 1
             else:
                 if existing_published_at[0] != vacancy_published_at:
-                    cursor.execute('''UPDATE vacancy SET published_at = ? WHERE hh_id = ?''', (vacancy_published_at, vacancy_hh_id))
+                    cursor.execute('''UPDATE vacancy SET published_at = ?, archived = ? WHERE hh_id = ?''', (vacancy_published_at, vacancy_archived, vacancy_hh_id))
                     print(existing_published_at, vacancy_published_at)
                     updated_vacancy += 1
 

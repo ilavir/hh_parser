@@ -3,13 +3,14 @@ import csv
 import json
 from datetime import datetime
 
-# Connect to the SQLite database
+# Database filename input without extension (.db)
 database_filename = input('Enter database filename (without extension .db): ')
 if len(database_filename) < 1:
-    database_filename = 'typography.db' # Replace 'your_database.db' with the actual database filename
+    database_filename = '../db/test.db' # database filename by default
 else:
-    database_filename += '.db'
+    database_filename = '../db/' + database_filename + '.db'
 
+# Connect to the SQLite database
 conn = sqlite3.connect(database_filename)
 cursor = conn.cursor()
 
@@ -35,9 +36,11 @@ with open(csv_file, 'w', newline='') as csvfile:
     #csv_writer.writerows(rows)
 
     for row in rows:
+        # Convert UNIX timestamp from DB to DD/MM/YYYY format for Date column
         dt_object = datetime.strptime(row[1], '%Y-%m-%dT%H:%M:%S%z')
         date_formatted = dt_object.strftime('%d/%m/%Y')
 
+        # If there are salary in JSON file, make a column Salary from it
         json_salary = json.loads(row[5])
         if json_salary:
             salary_formatted = (("от " + str(json_salary['from']) if json_salary['from'] else "") + (" до " + str(json_salary['to']) if json_salary['to'] else "") + (" гросс" if json_salary['gross'] else "")).strip()
@@ -52,6 +55,7 @@ with open(csv_file, 'w', newline='') as csvfile:
         else:
             address_formatted = None
 
+        # If there are contacts in JSON, split it to Name, Email and Phones columns
         json_contacts = json.loads(row[8])
         if json_contacts:
             if json_contacts['name']:
@@ -74,6 +78,7 @@ with open(csv_file, 'w', newline='') as csvfile:
             contacts_formatted_email = None
             contacts_formatted_phones = None
 
+        # Format data in row by columns to write into .csv file
         formatted_row = [
             row[0],
             date_formatted,
@@ -88,6 +93,7 @@ with open(csv_file, 'w', newline='') as csvfile:
             contacts_formatted_phones
         ]
 
+        # Insert formatted row into .csv file
         csv_writer.writerow(formatted_row)
 
 # Close the database connection
