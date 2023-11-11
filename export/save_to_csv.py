@@ -3,31 +3,82 @@ import csv
 import json
 from datetime import datetime
 
+today_date = datetime.now()
+
+# Function for choosing a header template (column names)
+def output_header(template_number):
+    match template_number:
+        case '0':
+            header = ['#', 'Дата', 'ID', 'Вакансия', 'Работодатель', 'Зарплата', 'График', 'Адрес', 'Контактное лицо', 'E-mail', 'Телефоны']
+        case _:
+            print('You have entered invalid template number')
+            exit()
+    return header
+
+# Function for choosing row template
+def output_template(template_number):
+    match template_number:
+        case '0':
+            template = [
+                row[0],
+                date_formatted,
+                row[2],
+                row[3],
+                row[4],
+                salary_formatted,
+                row[6],
+                address_formatted,
+                contacts_formatted_name,
+                contacts_formatted_email,
+                contacts_formatted_phones
+            ]
+        case _:
+            print('You have entered invalid template number')
+            exit()
+    return template
+    
 # Database filename input without extension (.db)
 database_filename = input('Enter database filename (without extension .db): ')
 if len(database_filename) < 1:
-    database_filename = '../db/test.db' # database filename by default
+    # Specify the CSV file name by default
+    csv_file = 'test.db' + '_' + today_date.strftime('%d%m%Y') + '.csv'
+    # Specify the database file name by default
+    database_filename = '../db/test.db'
 else:
+    # Specify the CSV file name
+    csv_file = database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
+    # Specify the database file name
     database_filename = '../db/' + database_filename + '.db'
+
+template_number = input('Enter template number for .csv export ("0" by default): ')
+if len(template_number) < 1:
+    template_number = '0'
 
 # Connect to the SQLite database
 conn = sqlite3.connect(database_filename)
 cursor = conn.cursor()
 
-# Execute a query to fetch all rows from the 'typography' table
-cursor.execute('SELECT vacancy.vacancy_id, vacancy.published_at, vacancy.hh_id, vacancy.name, employer.name, vacancy.salary, schedule.name, vacancy.address, vacancy.contacts FROM vacancy JOIN employer ON vacancy.employer_id = employer.employer_id JOIN schedule ON vacancy.schedule_id = schedule.schedule_id')
+# Full query to database for returning all possible data
+cursor.execute('''SELECT vacancy.vacancy_id,
+                         vacancy.published_at,
+                         vacancy.hh_id,
+                         vacancy.name,
+                         employer.name,
+                         vacancy.salary,
+                         schedule.name,
+                         vacancy.address,
+                         vacancy.contacts
+               FROM vacancy JOIN employer ON vacancy.employer_id = employer.employer_id JOIN schedule ON vacancy.schedule_id = schedule.schedule_id
+               ''')
 rows = cursor.fetchall()
-
-# Specify the CSV file name
-today_date = datetime.now()
-csv_file = database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
 
 # Write the data to a CSV file
 with open(csv_file, 'w', newline='') as csvfile:
     csv_writer = csv.writer(csvfile)
     
+    # Select a header (column names) template
+    header = output_header(template_number)
     # Write the header (column names)
-    header = ['#', 'Дата', 'ID', 'Вакансия', 'Работодатель', 'Зарплата', 'График', 'Адрес', 'Контактное лицо', 'Телефоны']
     csv_writer.writerow(header)
     #print([description[0] for description in cursor.description])
     #csv_writer.writerow([description[0] for description in cursor.description])
@@ -78,20 +129,8 @@ with open(csv_file, 'w', newline='') as csvfile:
             contacts_formatted_email = None
             contacts_formatted_phones = None
 
-        # Format data in row by columns to write into .csv file
-        formatted_row = [
-            row[0],
-            date_formatted,
-            row[2],
-            row[3],
-            row[4],
-            salary_formatted,
-            row[6],
-            address_formatted,
-            contacts_formatted_name,
-            contacts_formatted_email,
-            contacts_formatted_phones
-        ]
+        # Select a columns template
+        formatted_row = output_template(template_number)
 
         # Insert formatted row into .csv file
         csv_writer.writerow(formatted_row)

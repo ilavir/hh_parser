@@ -286,4 +286,5 @@ if __name__ == '__main__':
     params, api_url = get_parameters(args.desc)
     
     extract_vacancies_and_save(params, api_url, headers, args.desc, args.update)
+    cursor.close()
     conn.close()
