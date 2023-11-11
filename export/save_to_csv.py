@@ -50,6 +50,7 @@ else:
     # Specify the database file name
     database_filename = '../db/' + database_filename + '.db'
 
+# Template number input for headers and row columns for export
 template_number = input('Enter template number for .csv export ("0" by default): ')
 if len(template_number) < 1:
     template_number = '0'
