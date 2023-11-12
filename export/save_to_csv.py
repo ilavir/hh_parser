@@ -41,14 +41,14 @@ def output_template(template_number):
 database_filename = input('Enter database filename (without extension .db): ')
 if len(database_filename) < 1:
     # Specify the CSV file name by default
-    csv_file = 'test.db' + '_' + today_date.strftime('%d%m%Y') + '.csv'
+    csv_file = 'export/test.db' + '_' + today_date.strftime('%d%m%Y') + '.csv'
     # Specify the database file name by default
-    database_filename = '../db/test.db'
+    database_filename = 'db/test.db'
 else:
     # Specify the CSV file name
-    csv_file = database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
+    csv_file = 'export/' + database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
     # Specify the database file name
-    database_filename = '../db/' + database_filename + '.db'
+    database_filename = 'db/' + database_filename + '.db'
 
 # Template number input for headers and row columns for export
 template_number = input('Enter template number for .csv export ("0" by default): ')
