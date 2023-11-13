@@ -89,7 +89,7 @@ def authorization():
     if auth.status_code == 200:
         print(f"--- Status: {auth.status_code} OK ---")
     else:
-        print(f"--- {auth.status_code}: Not authorized ---")
+        print(f"--- ERROR {auth.status_code} ---")
         print(f"Access Token: {access_token}")
         print(f"Refresh Token: {refresh_token}")
         proceed = input('Do you want to proceed (Y/n): ')
