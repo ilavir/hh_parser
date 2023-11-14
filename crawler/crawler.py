@@ -3,6 +3,8 @@
 import requests
 import json
 import argparse
+import os
+from dotenv import load_dotenv
 from db_init import initialize_database
 
 #from authorization import get_token
@@ -51,7 +53,8 @@ def create_employers_table(cursor):
     return
 
 def authorization():
-    try:
+    
+    '''try:
         with open('tokens.json', 'r') as file:
             tokens = json.load(file)
             access_token = tokens.get('access_token')
@@ -60,8 +63,12 @@ def authorization():
             if not access_token or not refresh_token:
                 raise ValueError("Tokens not found in the file.")
     except FileNotFoundError:
-        raise FileNotFoundError("Tokens file not found. Please obtain tokens first.")
-    
+        raise FileNotFoundError("Tokens file not found. Please obtain tokens first.")'''
+    load_dotenv()
+
+    access_token = os.getenv('ACCESS_TOKEN')
+    refresh_token = os.getenv('REFRESH_TOKEN')
+
     headers = {
         'user-agent': 'api-test',
         'authorization': 'Bearer ' + access_token,

@@ -1,11 +1,15 @@
 import requests
 import json
+import os
+from dotenv import load_dotenv, find_dotenv, set_key
+
+load_dotenv()
 
 def get_tokens():
 
     # Replace with your HeadHunter API credentials
-    client_id = 'VM85UJBT6TL3S8ESS9QDIRG2CHPNSTV9OCNQF6CBBS2T4RH0B5IVKV2UGV0I1CIK'
-    client_secret = 'M8NOENCSJOCEV3DVCKMS6V0VR8B25GB9SDN4UDLH4I3PQMAQ7F273349HI59VIV3'
+    client_id = os.getenv('CLIENT_ID')
+    client_secret = os.getenv('CLIENT_SECRET')
     redirect_uri = 'http://localhost/auth'  # If you've specified it during app registration
     state = 'your_state'  # Optional, used to prevent CSRF attacks
 
@@ -61,10 +65,16 @@ def get_tokens():
 
 def save_tokens_to_file(access_token, refresh_token, filename='tokens.json'):
 
-    tokens = {'access_token': access_token, 'refresh_token': refresh_token}
+    '''tokens = {'access_token': access_token, 'refresh_token': refresh_token}
     with open(filename, 'w') as file:
-        json.dump(tokens, file)
-    print(f'Tokens saved to {filename}')
+        json.dump(tokens, file)'''
+    # Find the .env file in the current directory
+    dotenv_path = find_dotenv()
+
+    # Set or update a key-value pair in the .env file
+    set_key(dotenv_path, "ACCESS_TOKEN", access_token)
+    set_key(dotenv_path, "REFRESH_TOKEN", refresh_token)
+    print(f'Tokens saved to .env')
 
 access_token, refresh_token = get_tokens()
 
