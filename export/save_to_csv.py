@@ -1,9 +1,24 @@
 import sqlite3
 import csv
 import json
+import os
 from datetime import datetime
 
 today_date = datetime.now()
+
+# Database filename input without extension (.db)
+database_filename = input('Enter database filename (without extension .db): ')
+
+# Specify the CSV file name
+csv_file = 'export/' + database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
+
+# Specify the database file name
+database_filename = 'db/' + database_filename + '.db'
+
+# Check if database file exists
+if not os.path.exists(database_filename):
+    print('Database does not exist.')
+    exit()
 
 # Function for choosing a header template (column names)
 def output_header(template_number):
@@ -11,7 +26,7 @@ def output_header(template_number):
         case '0':
             header = ['#', 'Дата', 'ID', 'Вакансия', 'Работодатель', 'Зарплата', 'График', 'Адрес', 'Контактное лицо', 'E-mail', 'Телефоны']
         case _:
-            print('You have entered invalid template number')
+            print('You have entered invalid template number.')
             exit()
     return header
 
@@ -37,19 +52,6 @@ def output_template(template_number):
             exit()
     return template
     
-# Database filename input without extension (.db)
-database_filename = input('Enter database filename (without extension .db): ')
-if len(database_filename) < 1:
-    # Specify the CSV file name by default
-    csv_file = 'export/test.db' + '_' + today_date.strftime('%d%m%Y') + '.csv'
-    # Specify the database file name by default
-    database_filename = 'db/test.db'
-else:
-    # Specify the CSV file name
-    csv_file = 'export/' + database_filename + '_' + today_date.strftime('%d%m%Y') + '.csv'
-    # Specify the database file name
-    database_filename = 'db/' + database_filename + '.db'
-
 # Template number input for headers and row columns for export
 template_number = input('Enter template number for .csv export ("0" by default): ')
 if len(template_number) < 1:
@@ -138,6 +140,7 @@ with open(csv_file, 'w', newline='') as csvfile:
         csv_writer.writerow(formatted_row)
 
 # Close the database connection
+cursor.close()
 conn.close()
 
 print(f'Data has been exported to {csv_file}')

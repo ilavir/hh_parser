@@ -2,31 +2,10 @@
 
 import requests
 import json
-import sqlite3
 import argparse
+from db_init import initialize_database
 
 #from authorization import get_token
-
-# Function to create and initialize the SQLite database
-def initialize_database():
-
-    # Database filename input without extension (.db)
-    database_filename = input('Enter database filename (without extension .db): ')
-    if len(database_filename) < 1:
-        database_filename = 'db/test.db' # database filename by default
-    else:
-        database_filename = 'db/' + database_filename + '.db'
-
-    # Connecting to database
-    conn = sqlite3.connect(database_filename)
-    cursor = conn.cursor()
-
-    # Create vacancies and employers tables if not exists
-    create_vacancies_table(cursor)
-    create_employers_table(cursor)
-    conn.commit()
-
-    return conn, cursor
 
 def create_vacancies_table(cursor):
     cursor.execute('''
@@ -54,6 +33,8 @@ def create_vacancies_table(cursor):
         )
     ''')
 
+    return
+
 def create_employers_table(cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS employer (
@@ -66,6 +47,8 @@ def create_employers_table(cursor):
             vacancies_url TEXT
         )
     ''')
+
+    return
 
 def authorization():
     try:
@@ -92,7 +75,7 @@ def authorization():
         print(f"--- ERROR {auth.status_code} ---")
         print(f"Access Token: {access_token}")
         print(f"Refresh Token: {refresh_token}")
-        proceed = input('Do you want to proceed (Y/n): ')
+        proceed = input('Do you want to proceed? (Y/n): ')
         if proceed == 'Y':
             headers = {}
             return headers
@@ -285,6 +268,8 @@ if __name__ == '__main__':
 
     headers = authorization()
     conn, cursor = initialize_database()
+    create_vacancies_table(cursor)
+    create_employers_table(cursor)
     params, api_url = get_parameters(args.desc)
     
     extract_vacancies_and_save(params, api_url, headers, args.desc, args.update)
