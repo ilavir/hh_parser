@@ -43,10 +43,15 @@ def create_employers_table(cursor):
             employer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             hh_id INTEGER UNIQUE,
             name TEXT,
-            trusted BOOLEAN,
+            description TEXT,
+            site_url TEXT,
             url TEXT,
             alternate_url TEXT,
-            vacancies_url TEXT
+            vacancies_url TEXT,
+            trusted BOOLEAN,
+            area TEXT,
+            type TEXT,
+            industries TEXT
         )
     ''')
 
@@ -54,16 +59,6 @@ def create_employers_table(cursor):
 
 def authorization():
     
-    '''try:
-        with open('tokens.json', 'r') as file:
-            tokens = json.load(file)
-            access_token = tokens.get('access_token')
-            refresh_token = tokens.get('refresh_token')
-
-            if not access_token or not refresh_token:
-                raise ValueError("Tokens not found in the file.")
-    except FileNotFoundError:
-        raise FileNotFoundError("Tokens file not found. Please obtain tokens first.")'''
     load_dotenv()
 
     access_token = os.getenv('ACCESS_TOKEN')
@@ -91,7 +86,7 @@ def authorization():
     return headers
 
 # return parameters for API function call
-def get_parameters(args_desc):
+def get_parameters(args_description, args_employer):
     api_url = 'https://api.hh.ru/vacancies'
 
     params = {
@@ -109,15 +104,15 @@ def get_parameters(args_desc):
         param_value = input('Enter parameter value: ')
         params[param_type] = param_value
     
-    if args_desc == True:
-        params['per_page'] = 10
+    #if args_description == True or args_employer == True:
+    #    params['per_page'] = 10
 
     return params, api_url
 
 # Get argument -d (--description) from script start
-def args_desc_func(api_url, args_desc, vacancy_hh_id):
-    if args_desc == True:
-        vacancy_api_url = api_url + '/' + vacancy_hh_id
+def args_desc_func(args_description, vacancy_hh_id):
+    if args_description == True:
+        vacancy_api_url = 'https://api.hh.ru/vacancies/' + vacancy_hh_id
         vacancy = requests.get(vacancy_api_url).json()
         vacancy_description = vacancy['description']
         vacancy_skills = vacancy['key_skills']
@@ -126,8 +121,40 @@ def args_desc_func(api_url, args_desc, vacancy_hh_id):
         vacancy_skills = None
     return vacancy_description, vacancy_skills
 
+# Get argument -e (--employer) from script start
+def args_employer_func(cursor, args_employer, employer_hh_id):
+    if args_employer == True:
+        print(employer_hh_id)
+        employer_api_url = 'https://api.hh.ru/employers/' + employer_hh_id
+        employer = requests.get(employer_api_url).json()
+        employer_description = employer['description']
+        employer_site_url = employer['site_url']
+        cursor.execute('SELECT area_id FROM area WHERE hh_id = ?', (employer['area']['id'],))
+        cursor_current = cursor.fetchone()
+        if cursor_current:
+            employer_area = cursor_current[0]
+        else:
+            employer_area = 'Other'
+        cursor.execute('SELECT employer_type_id FROM employer_type WHERE hh_id = ?', (employer['type'],))
+        employer_type = cursor.fetchone()[0]
+        if employer['industries']:
+            employer_industries = []
+            for industry in employer['industries']:
+                cursor.execute('SELECT industries_id FROM industries WHERE hh_id = ?', (industry['id'],))
+                employer_industry = cursor.fetchone()[0]
+                employer_industries.append(employer_industry)
+        else:
+            employer_industries = None
+    else:
+        employer_description = None
+        employer_site_url = None
+        employer_area = None
+        employer_type = None
+        employer_industries = None
+    return employer_description, employer_site_url, employer_area, employer_type, employer_industries
+
 # call API and save every vacancy and assotiated employer to database
-def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update, page=0, new_vacancy=0, updated_vacancy=0):
+def extract_vacancies_and_save(params, api_url, headers, args_description, args_update, args_employer, page=0, new_vacancy=0, updated_vacancy=0):
 
     params['page'] = page
     
@@ -176,12 +203,8 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
         else:
             employer_hh_id = None
             employer_name = None
-            #employer_trusted = None
-            #employer_url = None
-            #employer_alternate_url = None
-            #employer_vacancies_url = None
 
-        print(f"{vacancy_name} | {employer_name}")
+        print(f"{vacancy_hh_id} | {vacancy_name} | {employer_name}")
 
         # check if current vacancy already exists in DB
         cursor.execute('SELECT * FROM vacancy WHERE hh_id = ?', (vacancy_hh_id,))
@@ -198,10 +221,14 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
                 existing_employer_id = existing_employer_id[0]
             else:
                 if vacancy_type['id'] != 'anonymous':
+                    employer_description, employer_site_url, employer_area, employer_type, employer_industries = args_employer_func(cursor, args_employer, employer_hh_id)
+
                     cursor.execute('''
-                        INSERT INTO employer (hh_id, name, trusted, url, alternate_url, vacancies_url)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (employer_hh_id, employer_name, employer_trusted, employer_url, employer_alternate_url, employer_vacancies_url))
+                        INSERT INTO employer (hh_id, name, trusted, url, alternate_url, vacancies_url,
+                                    description, site_url, area, type, industries)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (employer_hh_id, employer_name, employer_trusted, employer_url, employer_alternate_url, employer_vacancies_url,
+                          employer_description, employer_site_url, employer_area, employer_type, json.dumps(employer_industries, ensure_ascii=False)))
                     cursor.execute(
                         'SELECT employer_id FROM employer WHERE hh_id = ?', (employer_hh_id,))
                     existing_employer_id = cursor.fetchone()[0]
@@ -216,12 +243,12 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
             vacancy_experience = cursor.fetchone()[0]
             cursor.execute('SELECT area_id FROM area WHERE hh_id = ?', (vacancy_area['id'],))
             vacancy_area = cursor.fetchone()[0]
-            cursor.execute('SELECT type_id FROM type WHERE hh_id = ?', (vacancy_type['id'],))
+            cursor.execute('SELECT type_id FROM vacancy_type WHERE hh_id = ?', (vacancy_type['id'],))
             vacancy_type = cursor.fetchone()[0]
             cursor.execute('SELECT professional_roles_id FROM professional_roles WHERE hh_id = ?', (vacancy_professional_roles[0]['id'],))
             vacancy_professional_roles = cursor.fetchone()[0]
             
-            vacancy_description, vacancy_skills = args_desc_func(api_url, args_desc, vacancy_hh_id)
+            vacancy_description, vacancy_skills = args_desc_func(args_description, vacancy_hh_id)
 
             cursor.execute('''
                 INSERT INTO vacancy (hh_id, archived, employment_id, name, area_id, experience_id, url, alternate_url, salary, schedule_id,
@@ -240,7 +267,7 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
             existing_published_at = cursor.fetchone()
 
             if args_update == True:
-                vacancy_description, vacancy_skills = args_desc_func(api_url, args_desc, vacancy_hh_id)
+                vacancy_description, vacancy_skills = args_desc_func(args_description, vacancy_hh_id)
 
                 cursor.execute('''UPDATE vacancy SET archived = ?, name = ?, salary = ?, address = ?, snippet = ?,
                                          published_at = ?, contacts = ?, vacancy_description = ?, vacancy_skills = ? WHERE hh_id = ?
@@ -260,7 +287,7 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
     # check current page. if 'page' < than total pages, start function again
     if page < vacancies['pages'] - 1:
         page += 1
-        extract_vacancies_and_save(params, api_url, headers, args_desc, args_update, page, new_vacancy, updated_vacancy)
+        extract_vacancies_and_save(params, api_url, headers, args_description, args_update, args_employer, page, new_vacancy, updated_vacancy)
     else:
         print(f"\n--- Done --- {vacancies['found']} found, {new_vacancy} added, {updated_vacancy} updated ---")
 
@@ -269,16 +296,18 @@ def extract_vacancies_and_save(params, api_url, headers, args_desc, args_update,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--desc', action='store_true', help='parse including vacancy description and key skills')
+    parser.add_argument('-d', '--description', action='store_true', help='parse including vacancy description and key skills')
+    parser.add_argument('-e', '--employer', action='store_true', help='parse including employer description, industry and site_url')
     parser.add_argument('-u', '--update', action='store_true', help='update existing vacancies')
     args = parser.parse_args()
+    print(args)
 
     headers = authorization()
     conn, cursor = initialize_database()
     create_vacancies_table(cursor)
     create_employers_table(cursor)
-    params, api_url = get_parameters(args.desc)
+    params, api_url = get_parameters(args.description, args.employer)
     
-    extract_vacancies_and_save(params, api_url, headers, args.desc, args.update)
+    extract_vacancies_and_save(params, api_url, headers, args.description, args.update, args.employer)
     cursor.close()
     conn.close()

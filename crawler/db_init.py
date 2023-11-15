@@ -58,9 +58,9 @@ def area_table_create(conn, cursor):
     ''')
     conn.commit()
 
-def type_table_create(conn, cursor):
+def vacancy_type_table_create(conn, cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS type (
+        CREATE TABLE IF NOT EXISTS vacancy_type (
             type_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             hh_id TEXT,
             name TEXT
@@ -102,6 +102,27 @@ def professional_roles_table_create(conn, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS professional_roles (
             professional_roles_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            hh_id INTEGER,
+            parent_id INTEGER,
+            name TEXT
+        )
+    ''')
+    conn.commit()
+
+def employer_type_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS employer_type (
+            employer_type_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            hh_id INTEGER,
+            name TEXT
+        )
+    ''')
+    conn.commit()
+
+def industries_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS industries (
+            industries_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             hh_id INTEGER,
             parent_id INTEGER,
             name TEXT
@@ -155,22 +176,22 @@ def area_dict_update(conn, cursor, parent_id=16):
 
     conn.commit()
 
-def type_dict_update(conn, cursor):
+def vacancy_type_dict_update(conn, cursor):
 
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
 
-    print('Dictionary "type" updating...')
+    print('Dictionary "vacancy_type" updating...')
 
     for item in data['vacancy_type']:
         hh_id = item['id']
         name = item['name']
 
-        cursor.execute('SELECT * FROM type WHERE hh_id = ?', (hh_id,))
+        cursor.execute('SELECT * FROM vacancy_type WHERE hh_id = ?', (hh_id,))
         if_exists = cursor.fetchone()
 
         if not if_exists:
-            cursor.execute('INSERT INTO type (hh_id, name) VALUES (?, ?)', (hh_id, name))
+            cursor.execute('INSERT INTO vacancy_type (hh_id, name) VALUES (?, ?)', (hh_id, name))
             
     conn.commit()
 
@@ -249,8 +270,9 @@ def professional_roles_dict_update(conn, cursor):
             cursor.execute('INSERT INTO professional_roles (hh_id, name) VALUES (?, ?)', (hh_id, name))
 
         if item['roles']:
+            parent_id = hh_id
+
             for item in item['roles']:
-                parent_id = hh_id
                 hh_id = item['id']
                 name = item['name']
 
@@ -262,21 +284,76 @@ def professional_roles_dict_update(conn, cursor):
             
     conn.commit()
 
+def employer_type_dict_update(conn, cursor):
+
+    api_url = 'https://api.hh.ru/dictionaries'
+    data = requests.get(api_url).json()
+
+    print('Dictionary "employer_type" updating...')
+
+    for item in data['employer_type']:
+        hh_id = item['id']
+        name = item['name']
+
+        cursor.execute('SELECT * FROM employer_type WHERE hh_id = ?', (hh_id,))
+        if_exists = cursor.fetchone()
+
+        if not if_exists:
+            cursor.execute('INSERT INTO employer_type (hh_id, name) VALUES (?, ?)', (hh_id, name))
+            
+    conn.commit()
+
+def industries_dict_update(conn, cursor):
+
+    api_url = 'https://api.hh.ru/industries'
+    data = requests.get(api_url).json()
+
+    print('Dictionary "industries" updating...')
+
+    for item in data:
+        hh_id = item['id']
+        name = item['name']
+
+        cursor.execute('SELECT * FROM industries WHERE hh_id = ?', (hh_id,))
+        if_exists = cursor.fetchone()
+
+        if not if_exists:
+            cursor.execute('INSERT INTO industries (hh_id, name) VALUES (?, ?)', (hh_id, name))
+
+        if item['industries']:
+            parent_id = hh_id
+            
+            for item in item['industries']:
+                hh_id = item['id']
+                name = item['name']
+
+                cursor.execute('SELECT * FROM industries WHERE hh_id = ?', (hh_id,))
+                if_exists = cursor.fetchone()
+
+                if not if_exists:
+                    cursor.execute('INSERT INTO industries (hh_id, name, parent_id) VALUES (?, ?, ?)', (hh_id, name, parent_id))
+            
+    conn.commit()
+
 def create_database(conn, cursor):
     area_table_create(conn, cursor)
-    type_table_create(conn, cursor)
+    vacancy_type_table_create(conn, cursor)
     experience_table_create(conn, cursor)
     schedule_table_create(conn, cursor)
     employment_table_create(conn, cursor)
     professional_roles_table_create(conn, cursor)
+    employer_type_table_create(conn, cursor)
+    industries_table_create(conn, cursor)
 
 def update_dictionaries(conn, cursor):
     area_dict_update(conn, cursor)
-    type_dict_update(conn, cursor)
+    vacancy_type_dict_update(conn, cursor)
     experience_dict_update(conn, cursor)
     schedule_dict_update(conn, cursor)
     employment_dict_update(conn, cursor)
     professional_roles_dict_update(conn, cursor)
+    employer_type_dict_update(conn, cursor)
+    industries_dict_update(conn, cursor)
 
 if __name__ == '__main__':
     conn, cursor = initialize_database()
