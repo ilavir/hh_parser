@@ -104,8 +104,8 @@ def get_parameters(args_description, args_employer):
         param_value = input('Enter parameter value: ')
         params[param_type] = param_value
     
-    #if args_description == True or args_employer == True:
-    #    params['per_page'] = 10
+    if args_description == True or args_employer == True:
+        params['per_page'] = 10
 
     return params, api_url
 
@@ -124,7 +124,6 @@ def args_desc_func(args_description, vacancy_hh_id):
 # Get argument -e (--employer) from script start
 def args_employer_func(cursor, args_employer, employer_hh_id):
     if args_employer == True:
-        print(employer_hh_id)
         employer_api_url = 'https://api.hh.ru/employers/' + employer_hh_id
         employer = requests.get(employer_api_url).json()
         employer_description = employer['description']
@@ -300,7 +299,6 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--employer', action='store_true', help='parse including employer description, industry and site_url')
     parser.add_argument('-u', '--update', action='store_true', help='update existing vacancies')
     args = parser.parse_args()
-    print(args)
 
     headers = authorization()
     conn, cursor = initialize_database()
