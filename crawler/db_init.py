@@ -180,58 +180,55 @@ def industries_table_create(conn, cursor):
     ''')
     conn.commit()
 
-def area_dict_update(conn, cursor, parent_id=16):
-
-    api_url = 'https://api.hh.ru/areas/'
-    data = requests.get(api_url + str(parent_id)).json()
-
+def area_dict_update(conn, cursor):
     print('Dictionary "area" updating...')
+    api_url = 'https://api.hh.ru/areas/'
+    data = requests.get(api_url).json()
 
-    hh_id = data['id']
-    parent_id = data['parent_id']
-    name = data['name']
+    for item in data:
+        hh_id = item['id']
+        parent_id = item['parent_id']
+        name = item['name']
 
-    # check if current area already exists in DB
-    cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
-    if_exists = cursor.fetchone()
+        # check if current area already exists in DB
+        cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
+        if_exists = cursor.fetchone()
 
-    if not if_exists:
-        cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
+        if not if_exists:
+            cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
 
-    if data['areas']:
-        for item in data['areas']:
-            hh_id = item['id']
-            parent_id = item['parent_id']
-            name = item['name']
+        if item['areas']:
+            for item in item['areas']:
+                hh_id = item['id']
+                parent_id = item['parent_id']
+                name = item['name']
 
-            # check if current area already exists in DB
-            cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
-            if_exists = cursor.fetchone()
+                # check if current area already exists in DB
+                cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
+                if_exists = cursor.fetchone()
 
-            if not if_exists:
-                cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
+                if not if_exists:
+                    cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
 
-            if item['areas']:
-                for item in item['areas']:
-                    hh_id = item['id']
-                    parent_id = item['parent_id']
-                    name = item['name']
+                if item['areas']:
+                    for item in item['areas']:
+                        hh_id = item['id']
+                        parent_id = item['parent_id']
+                        name = item['name']
 
-                    # check if current area already exists in DB
-                    cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
-                    if_exists = cursor.fetchone()
+                        # check if current area already exists in DB
+                        cursor.execute('SELECT * FROM area WHERE hh_id = ?', (hh_id,))
+                        if_exists = cursor.fetchone()
 
-                    if not if_exists:
-                        cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
+                        if not if_exists:
+                            cursor.execute('INSERT INTO area (hh_id, parent_id, name) VALUES (?, ?, ?)', (hh_id, parent_id, name))
 
     conn.commit()
 
 def vacancy_type_dict_update(conn, cursor):
-
+    print('Dictionary "vacancy_type" updating...')
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "vacancy_type" updating...')
 
     for item in data['vacancy_type']:
         hh_id = item['id']
@@ -246,11 +243,9 @@ def vacancy_type_dict_update(conn, cursor):
     conn.commit()
 
 def experience_dict_update(conn, cursor):
-
+    print('Dictionary "experience" updating...')
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "experience" updating...')
 
     for item in data['experience']:
         hh_id = item['id']
@@ -265,11 +260,9 @@ def experience_dict_update(conn, cursor):
     conn.commit()
 
 def schedule_dict_update(conn, cursor):
-
+    print('Dictionary "schedule" updating...')
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "schedule" updating...')
 
     for item in data['schedule']:
         hh_id = item['id']
@@ -284,11 +277,9 @@ def schedule_dict_update(conn, cursor):
     conn.commit()
 
 def employment_dict_update(conn, cursor):
-
+    print('Dictionary "employment" updating...')
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "employment" updating...')
 
     for item in data['employment']:
         hh_id = item['id']
@@ -303,11 +294,9 @@ def employment_dict_update(conn, cursor):
     conn.commit()
 
 def professional_roles_dict_update(conn, cursor):
-
+    print('Dictionary "professional_roles" updating...')
     api_url = 'https://api.hh.ru/professional_roles'
     data = requests.get(api_url).json()
-
-    print('Dictionary "professional_roles" updating...')
 
     for item in data['categories']:
         hh_id = item['id']
@@ -335,11 +324,9 @@ def professional_roles_dict_update(conn, cursor):
     conn.commit()
 
 def employer_type_dict_update(conn, cursor):
-
+    print('Dictionary "employer_type" updating...')
     api_url = 'https://api.hh.ru/dictionaries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "employer_type" updating...')
 
     for item in data['employer_type']:
         hh_id = item['id']
@@ -354,11 +341,9 @@ def employer_type_dict_update(conn, cursor):
     conn.commit()
 
 def industries_dict_update(conn, cursor):
-
+    print('Dictionary "industries" updating...')
     api_url = 'https://api.hh.ru/industries'
     data = requests.get(api_url).json()
-
-    print('Dictionary "industries" updating...')
 
     for item in data:
         hh_id = item['id']
