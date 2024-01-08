@@ -9,54 +9,6 @@ from db_init import initialize_database
 
 #from authorization import get_token
 
-def create_vacancies_table(cursor):
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS vacancy (
-            vacancy_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            hh_id INTEGER UNIQUE,
-            name TEXT,
-            area_id TEXT,
-            salary TEXT,
-            type_id TEXT,
-            address TEXT,
-            contacts TEXT,
-            professional_roles_id INTEGER,
-            experience_id TEXT,
-            schedule_id TEXT,
-            employment_id TEXT,
-            snippet TEXT,
-            vacancy_description TEXT,
-            vacancy_skills TEXT,
-            url TEXT,
-            alternate_url TEXT,
-            archived BOOLEAN,
-            published_at DATETIME,
-            employer_id INTEGER
-        )
-    ''')
-
-    return
-
-def create_employers_table(cursor):
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS employer (
-            employer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            hh_id INTEGER UNIQUE,
-            name TEXT,
-            description TEXT,
-            site_url TEXT,
-            url TEXT,
-            alternate_url TEXT,
-            vacancies_url TEXT,
-            trusted BOOLEAN,
-            area TEXT,
-            type TEXT,
-            industries TEXT
-        )
-    ''')
-
-    return
-
 def authorization():
     
     load_dotenv()
@@ -78,10 +30,11 @@ def authorization():
         print(f"Access Token: {access_token}")
         print(f"Refresh Token: {refresh_token}")
         proceed = input('Do you want to proceed? (Y/n): ')
-        if proceed == 'Y':
+        if proceed.lower() == 'y':
             headers = {}
             return headers
         else:
+            print('Goodbye.')
             exit()
     return headers
 
@@ -111,6 +64,7 @@ def get_parameters(args_description, args_employer):
 
 # Get argument -d (--description) from script start
 def args_desc_func(args_description, vacancy_hh_id):
+
     if args_description == True:
         vacancy_api_url = 'https://api.hh.ru/vacancies/' + vacancy_hh_id
         vacancy = requests.get(vacancy_api_url).json()
@@ -119,10 +73,12 @@ def args_desc_func(args_description, vacancy_hh_id):
     else:
         vacancy_description = None
         vacancy_skills = None
+
     return vacancy_description, vacancy_skills
 
 # Get argument -e (--employer) from script start
 def args_employer_func(cursor, args_employer, employer_hh_id):
+
     if args_employer == True:
         employer_api_url = 'https://api.hh.ru/employers/' + employer_hh_id
         employer = requests.get(employer_api_url).json()
@@ -130,12 +86,15 @@ def args_employer_func(cursor, args_employer, employer_hh_id):
         employer_site_url = employer['site_url']
         cursor.execute('SELECT area_id FROM area WHERE hh_id = ?', (employer['area']['id'],))
         cursor_current = cursor.fetchone()
+
         if cursor_current:
             employer_area = cursor_current[0]
         else:
             employer_area = 'Other'
+
         cursor.execute('SELECT employer_type_id FROM employer_type WHERE hh_id = ?', (employer['type'],))
         employer_type = cursor.fetchone()[0]
+
         if employer['industries']:
             employer_industries = []
             for industry in employer['industries']:
@@ -144,12 +103,14 @@ def args_employer_func(cursor, args_employer, employer_hh_id):
                 employer_industries.append(employer_industry)
         else:
             employer_industries = None
+
     else:
         employer_description = None
         employer_site_url = None
         employer_area = None
         employer_type = None
         employer_industries = None
+
     return employer_description, employer_site_url, employer_area, employer_type, employer_industries
 
 # call API and save every vacancy and assotiated employer to database
@@ -302,8 +263,6 @@ if __name__ == '__main__':
 
     headers = authorization()
     conn, cursor = initialize_database()
-    create_vacancies_table(cursor)
-    create_employers_table(cursor)
     params, api_url = get_parameters(args.description, args.employer)
     
     extract_vacancies_and_save(params, api_url, headers, args.description, args.update, args.employer)

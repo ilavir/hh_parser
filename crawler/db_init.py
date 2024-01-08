@@ -15,37 +15,87 @@ def initialize_database():
     if not os.path.exists(database_filename):
         print('Database does not exist.')
         create_file = input('Create database? (Y/n): ')
-        if create_file == 'Y':
+
+        if create_file.lower() == 'y':
             # Connect to database and create/update dictionaries
             conn = sqlite3.connect(database_filename)
             cursor = conn.cursor()
             print('Creating database...')
             create_database(conn, cursor)
-            update_dictionaries(conn, cursor)
-            print('All dictionaries successfuly updated.')
             print('Database successfuly created.')
-        else:
-            print('Goodbye.')
-            exit()
-    elif os.path.exists(database_filename) and __name__ == '__main__':
-        print('Database already exists.')
-        update_file = input('Update database dictionaries? (Y/n): ')
-        if update_file == 'Y':
-            # Connect to database and create/update dictionaries
-            conn = sqlite3.connect(database_filename)
-            cursor = conn.cursor()
-            create_database(conn, cursor)
+            print('Updating dictionaries...')
             update_dictionaries(conn, cursor)
-            print('All dictionaries successfuly updated.')
+            print('Dictionaries successfuly updated.')
         else:
             print('Goodbye.')
             exit()
-    else:
-        # Connect to database
+            
+    elif os.path.exists(database_filename):
+        print('Database already exists.')
+        update_file = input('Update database? (Y/n): ')
         conn = sqlite3.connect(database_filename)
         cursor = conn.cursor()
+
+        if update_file.lower() == 'y':
+            # Connect to database and create/update dictionaries
+            print('Creating database...')
+            create_database(conn, cursor)
+            print('Database successfuly created.')
+            print('Updating dictionaries...')
+            update_dictionaries(conn, cursor)
+            print('Dictionaries successfuly updated.')
     
     return conn, cursor
+
+def vacancies_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS vacancy (
+            vacancy_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            hh_id INTEGER UNIQUE,
+            name TEXT,
+            area_id TEXT,
+            salary TEXT,
+            type_id TEXT,
+            address TEXT,
+            contacts TEXT,
+            professional_roles_id INTEGER,
+            experience_id TEXT,
+            schedule_id TEXT,
+            employment_id TEXT,
+            snippet TEXT,
+            vacancy_description TEXT,
+            vacancy_skills TEXT,
+            url TEXT,
+            alternate_url TEXT,
+            archived BOOLEAN,
+            published_at DATETIME,
+            employer_id INTEGER
+        )
+    ''')
+    conn.commit()
+
+    return
+
+def employers_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS employer (
+            employer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            hh_id INTEGER UNIQUE,
+            name TEXT,
+            description TEXT,
+            site_url TEXT,
+            url TEXT,
+            alternate_url TEXT,
+            vacancies_url TEXT,
+            trusted BOOLEAN,
+            area TEXT,
+            type TEXT,
+            industries TEXT
+        )
+    ''')
+    conn.commit()
+
+    return
 
 def area_table_create(conn, cursor):
     cursor.execute('''
@@ -344,6 +394,8 @@ def create_database(conn, cursor):
     professional_roles_table_create(conn, cursor)
     employer_type_table_create(conn, cursor)
     industries_table_create(conn, cursor)
+    vacancies_table_create(conn, cursor)
+    employers_table_create(conn, cursor)
 
 def update_dictionaries(conn, cursor):
     area_dict_update(conn, cursor)

@@ -103,7 +103,10 @@ with open(csv_file, 'w', newline='') as csvfile:
 
         json_address = json.loads(row[7])
         if json_address:
-            address_formatted = json_address['raw']
+            if json_address['raw']:
+                address_formatted = json_address['raw']
+            else:
+                address_formatted = ''
             if json_address['metro']:
                 address_formatted += ", метро: " + json_address['metro']['station_name']
         else:
