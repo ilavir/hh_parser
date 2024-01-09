@@ -3,13 +3,24 @@ import sqlite3
 import os
 
 def initialize_database():
+    database_directory = 'db'
 
-    # Database filename input without extension (.db)
-    database_filename = input('Enter database filename (without extension .db): ')
-    if len(database_filename) < 1:
-        database_filename = 'db/test.db' # database filename by default
+    # Create a database directory if it does not exist
+    if not os.path.exists(database_directory):
+        os.makedirs(database_directory)
+
+    # Database name input without extension (.db)
+    database_name = input('Enter database name: ')
+
+    # Check if database name is empty
+    if len(database_name) < 1:
+        database_name = 'test.db' # database filename by default
     else:
-        database_filename = 'db/' + database_filename + '.db'
+        if not database_name.endswith('.db'):
+            database_name += '.db' # add .db extension if not present
+    
+    # Full database filename with directory
+    database_filename = os.path.join(database_directory, database_name)
 
     # Check if database file exists
     if not os.path.exists(database_filename):
@@ -33,11 +44,12 @@ def initialize_database():
     elif os.path.exists(database_filename):
         print('Database already exists.')
         update_file = input('Update database? (Y/n): ')
+        # Connect to database
         conn = sqlite3.connect(database_filename)
         cursor = conn.cursor()
 
         if update_file.lower() == 'y':
-            # Connect to database and create/update dictionaries
+            # Create/update dictionaries
             print('Creating database...')
             create_database(conn, cursor)
             print('Database successfuly created.')
