@@ -29,13 +29,14 @@ def authorization():
         print(f"--- ERROR {auth.status_code} ---")
         print(f"Access Token: {access_token}")
         print(f"Refresh Token: {refresh_token}")
-        proceed = input('Do you want to proceed? (Y/n): ')
+        proceed = input('Do you want to proceed without authorization? (Y/n): ')
+
         if proceed.lower() == 'y':
             headers = {}
-            return headers
         else:
             print('Goodbye.')
             exit()
+            
     return headers
 
 # return parameters for API function call
@@ -57,8 +58,8 @@ def get_parameters(args_description, args_employer):
         param_value = input('Enter parameter value: ')
         params[param_type] = param_value
     
-    if args_description == True or args_employer == True:
-        params['per_page'] = 10
+    #if args_description == True or args_employer == True:
+    #    params['per_page'] = 10
 
     return params, api_url
 
