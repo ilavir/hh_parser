@@ -59,6 +59,7 @@ def initialize_database():
     
     return conn, cursor
 
+
 def vacancies_table_create(conn, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vacancy (
@@ -123,14 +124,14 @@ def relation_status_table_create(conn, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS relation_status (
         relation_status_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-        name TEXT
+        name TEXT UNIQUE
         )
     ''')
+    
+    relation_status_list = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ']
 
-    relation_status = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ']
-
-    for status in relation_status:
-        cursor.execute('INSERT INTO relation_status (name) VALUES (?)', (status,))
+    for status in relation_status_list:
+        cursor.execute('INSERT OR IGNORE INTO relation_status (name) VALUES (?)', (status,))
 
     conn.commit()
 

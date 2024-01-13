@@ -20,9 +20,8 @@
             <div class="col">
                 <label for="db">База данных: <strong>{{ selected_db }}</strong></label>
                 <select name="db" id="db">
-                    <option value=""></option>
                     {% for db_file in db_files %}
-                        <option value="{{ db_file }}">{{ db_file }}</option>
+                        <option value="{{ db_file }}" {% if db_file == selected_db %}selected{% endif %}>{{ db_file }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -82,7 +81,20 @@
                                 <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
                                 <td>{{ vacancy[7] }}</td>
                                 <td>{{ vacancy[9] }}</td>
-                                <td>{{ vacancy[10] }}</td>
+                                <td>
+                                    <form action="{{ url_for('index') }}" method="get" onsubmit="return submitForm(this);">
+                                        <input type="hidden" name="page" value="{{ pagination.page }}">
+                                        <input type="hidden" name="db" value="{{ selected_db }}">
+                                        <input type="hidden" name="vacancy_id" value="{{ vacancy[11] }}">
+
+                                        <select name="relation_status" id="relation_status" onchange="this.form.submit()">
+                                            <option value="None"></option>
+                                            {% for status in status_list %}
+                                                <option value="{{ status[0] }}" {% if vacancy[10] == status[0] %}selected{% endif %}>{{ status[1] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                </td>
                             </tr>
                             <tr>
                                 <td colspan="9" class="table-light">

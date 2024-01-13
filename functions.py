@@ -22,13 +22,12 @@ def get_vacancies(selected_db, offset=0, per_page=20):
     query = """
         SELECT vacancy.hh_id, vacancy.name AS vacancy_name, area.name AS area_name, schedule.name AS schedule_name, vacancy.salary,
         employer.hh_id AS employer_hh_id, employer.name AS employer_name, vacancy.published_at, vacancy.snippet,
-        relation.favorite, relation_status.name
+        relation.favorite, relation.relation_status_id, vacancy.vacancy_id
         FROM vacancy
         JOIN area ON vacancy.area_id = area.area_id
         JOIN schedule ON vacancy.schedule_id = schedule.schedule_id
         JOIN employer ON vacancy.employer_id = employer.employer_id
         LEFT JOIN relation ON vacancy.vacancy_id = relation.vacancy_id
-		LEFT JOIN relation_status ON relation.relation_status_id = relation_status.relation_status_id
         ORDER BY vacancy.published_at DESC
         LIMIT ? OFFSET ?;
     """
@@ -49,6 +48,34 @@ def get_vacancies(selected_db, offset=0, per_page=20):
             formatted_date,) + (json.loads(vacancy[8]),) + vacancy[9:]
 
     return vacancies, total_vacancies
+
+
+def get_relation_status_list(selected_db):
+    conn, cursor = db_connect(selected_db)
+
+    query = """SELECT * FROM relation_status"""
+    cursor.execute(query)
+    relation_status_list = cursor.fetchall()
+
+    conn.close()
+
+    return relation_status_list
+
+
+def change_relation_status(selected_db, vacancy_id, relation_status):
+    conn, cursor = db_connect(selected_db)
+
+    if relation_status == 'None':
+        relation_status = None
+
+    query = """INSERT OR IGNORE INTO relation (vacancy_id, relation_status_id) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, relation_status))
+
+    query = """UPDATE relation SET relation_status_id = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (relation_status, vacancy_id))
+
+    conn.commit()
+    conn.close()
 
 
 def get_vacancy_by_id(selected_db, vacancy_id):
