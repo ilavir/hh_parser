@@ -81,6 +81,43 @@ def get_vacancy_by_id(selected_db, vacancy_id):
     return vacancy
 
 
+def get_employer_by_id(selected_db, vacancy_id):
+    conn, cursor = db_connect(selected_db)
+    query = """
+        SELECT employer.*, area.name, employer_type.name
+        FROM employer
+        JOIN area ON employer.area = area.area_id
+        JOIN employer_type ON employer.type = employer_type.employer_type_id
+        WHERE employer.hh_id = ?
+    """
+    cursor.execute(query, (vacancy_id,))
+    employer = cursor.fetchone()
+
+    # Convertions 
+    employer = employer[:11] + (json.loads(employer[11]),) + employer[12:]
+
+    # Retrieve industries from database if they are exist
+    if employer[11]:
+        industries_list = []
+
+        for industry in employer[11]:
+            query = """
+                SELECT industries.name
+                FROM industries
+                WHERE industries_id = ?
+            """
+            cursor.execute(query, (industry,))
+            industries_list.append(cursor.fetchone()[0])
+
+        industries = '; '.join(industries_list)
+    else:
+        industries = None
+
+    conn.close()
+
+    return employer, industries
+
+
 @app.route('/')
 def index():
     db_files = get_database_files()
@@ -110,12 +147,12 @@ def vacancy_detail(hh_id):
 @app.route('/employer/<hh_id>')
 def employer_detail(hh_id):
     selected_db = request.args.get('db')
-    employer = get_employer_by_id(selected_db, hh_id)
+    employer, industries = get_employer_by_id(selected_db, hh_id)
 
     if not employer:
         return "Employer not found", 404
 
-    return render_template('employer.html', employer=employer)
+    return render_template('employer.html', employer=employer, industries=industries)
 
 
 if __name__ == '__main__':

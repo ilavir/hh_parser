@@ -18,7 +18,7 @@
     <div class="container my-4">
         <div class="row">
             <div class="col">
-                <label for="db">База данных:</label>
+                <label for="db">База данных: <strong>{{ selected_db }}</strong></label>
                 <select name="db" id="db">
                     <option value=""></option>
                     {% for db_file in db_files %}
@@ -70,7 +70,7 @@
                                     
                                     {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy[4] else '---' }}
                                 </td>
-                                <td><a href="https://hh.ru/employer/{{ vacancy[5] }}" target="_blank">{{ vacancy[6] }}</a></td>
+                                <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
                                 <td>{{ vacancy[7] }}</td>
                             </tr>
                             <tr>
