@@ -10,19 +10,71 @@
 <body>
     <div class="container my-4">
         <div class="row">
-            <div class="col text-center">
-                <h1>{{ vacancy[1] }}</h1>
+            <div class="col text-center white {{ 'bg-secondary' if vacancy[5] == 1 }}">
+                <h1>{{ vacancy[4] }}</h1>
             </div>
         </div>
     </div>
     <div class="container">
         <div class="row">
             <div class="col">
-                <p>Area: {{ vacancy[2] }}</p>
-                <p>Schedule: {{ vacancy[3] }}</p>
-                <p>Salary: от {{ vacancy[4]['from'] }} до {{ vacancy[4]['to'] }}</p>
-                <p>Employer: <a href="https://hh.ru/employer/{{ vacancy[5] }}">{{ vacancy[6] }}</a></p>
-                <!-- Add any other details you want to display -->
+                <p><strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a></p>
+            </div>
+            <div class="col text-end">
+                <p>{{ vacancy[7] }}, {{ vacancy[6] }}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                {% if vacancy[8] %}
+                    <p><strong>Зарплата:</strong>
+                    {% set salary_from = vacancy[8]['from'] if vacancy[8] else None %}
+                    {% set salary_to = vacancy[8]['to'] if vacancy[8] else None %}
+                    {% set salary_currency = vacancy[8]['currency'] if vacancy[8] else None %}
+                    {% set salary_gross = 'до вычета налогов' if vacancy[8]['gross'] == True else '' %}
+                    
+                    {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(salary_currency) if salary_currency else '') + ' {}'.format(salary_gross) }}
+                    </p>
+                {% endif %}
+                <p class="mb-0"><strong>Город:</strong> {{ vacancy[18] }}</p>
+                <p class="mb-0"><strong>Опыт работы:</strong> {{ vacancy[9] }}</p>
+                <p class="mb-0"><strong>Занятость:</strong> {{ vacancy[15] }}</p>
+                <p class="mb-0"><strong>График:</strong> {{ vacancy[10] }}</p>
+            </div>
+            <div class="col-4 text-end">
+                <p><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[14]) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
+                {% if vacancy[19] %}
+                    {% set address_raw = vacancy[19]['raw'] %}
+
+                    <p><a href="https://maps.yandex.ru?text={{ vacancy_raw }}" target="_blank">{{ address_raw }}</a></p>
+                {% endif %}
+                {% if vacancy[20] %}
+                    {% set contacts_name = vacancy[20]['name'] %}
+                    {% set contacts_email = vacancy[20]['email'] %}
+
+                    <p class="mb-0">{{ contacts_name }}</p>
+                    <p class="mb-0">{{ '<a href="mailto:{}">{}</a>'.format(contacts_email, contacts_email)|safe }}</p>
+                    <p>{% for phone in vacancy[20]['phones'] %}
+                            +{{ phone['formatted'] }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col">
+                <p class="mb-0"><strong>Должность:</strong> {{ vacancy[13] }}</p>
+                {% if vacancy[12] %}
+                    <p><strong>Навыки:</strong>
+                        {% for skill in vacancy[12] %}
+                            {{ skill['name'] }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row mb-5 p-3 text-bg-light">
+            <div class="col">
+                {{ vacancy[11][1:-1]|safe }}
             </div>
         </div>
     </div>

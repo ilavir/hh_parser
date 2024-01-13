@@ -43,7 +43,7 @@ def get_vacancies(selected_db, offset=0, per_page=20):
 
     conn.close()
 
-    # Convert salary strings to dictionaries
+    # Convertions
     for i, vacancy in enumerate(vacancies):
         dt_object = datetime.strptime(vacancy[7], "%Y-%m-%dT%H:%M:%S%z")
         formatted_date = dt_object.strftime("%d.%m.%Y")
@@ -55,17 +55,26 @@ def get_vacancies(selected_db, offset=0, per_page=20):
 def get_vacancy_by_id(selected_db, vacancy_id):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT vacancy.hh_id, vacancy.name, area.name, schedule.name, vacancy.salary,
-        employer.hh_id, employer.name FROM vacancy JOIN area ON vacancy.area_id = area.area_id
-        JOIN schedule ON vacancy.schedule_id = schedule.schedule_id JOIN employer ON vacancy.employer_id = employer.employer_id
+        SELECT vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
+        vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
+        employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts
+        FROM vacancy
+        JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
+        JOIN experience ON vacancy.experience_id = experience.experience_id
+        JOIN schedule ON vacancy.schedule_id = schedule.schedule_id
+        JOIN professional_roles ON vacancy.professional_roles_id = professional_roles.professional_roles_id
+        JOIN employer ON vacancy.employer_id = employer.employer_id
+        JOIN employment ON vacancy.employment_id = employment.employment_id
+        JOIN area ON vacancy.area_id = area.area_id
         WHERE vacancy.hh_id = ?
     """
     cursor.execute(query, (vacancy_id,))
     vacancy = cursor.fetchone()
 
-    # Convert salary string to dictionary
-    if vacancy and vacancy[4]:
-        vacancy = vacancy[:4] + (json.loads(vacancy[4]),) + vacancy[5:]
+    # Convertions 
+    dt_object = datetime.strptime(vacancy[6], "%Y-%m-%dT%H:%M:%S%z")
+    formatted_date = dt_object.strftime("%d.%m.%Y")
+    vacancy = vacancy[:6] + (formatted_date,) + (vacancy[7],) + (json.loads(vacancy[8]),) + vacancy[9:12] + (json.loads(vacancy[12]),) + vacancy[13:19] + (json.loads(vacancy[19]),) + (json.loads(vacancy[20]),)
 
     conn.close()
 
@@ -82,7 +91,6 @@ def index():
     offset = (page - 1) * per_page
 
     vacancies, total_vacancies = get_vacancies(selected_db, offset=offset, per_page=per_page)
-    print(total_vacancies)
     pagination = {'page': page, 'per_page': per_page, 'total': total_vacancies, 'pages': ceil(total_vacancies / per_page)}
 
     return render_template('index.html', db_files=db_files, selected_db=selected_db, vacancies=vacancies, pagination=pagination)
@@ -96,7 +104,18 @@ def vacancy_detail(hh_id):
     if not vacancy:
         return "Vacancy not found", 404
 
-    return render_template('vacancy.html', vacancy=vacancy)
+    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db)
+
+
+@app.route('/employer/<hh_id>')
+def employer_detail(hh_id):
+    selected_db = request.args.get('db')
+    employer = get_employer_by_id(selected_db, hh_id)
+
+    if not employer:
+        return "Employer not found", 404
+
+    return render_template('employer.html', employer=employer)
 
 
 if __name__ == '__main__':
