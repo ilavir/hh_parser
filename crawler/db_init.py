@@ -86,8 +86,6 @@ def vacancies_table_create(conn, cursor):
     ''')
     conn.commit()
 
-    return
-
 def employers_table_create(conn, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS employer (
@@ -107,7 +105,35 @@ def employers_table_create(conn, cursor):
     ''')
     conn.commit()
 
-    return
+
+def relation_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS relation (
+            relation_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            vacancy_id INTEGER NOT NULL UNIQUE,
+            favorite BOOLEAN,
+            relation_status_id INTEGER,
+            cover_letter TEXT
+        )
+    ''')
+    conn.commit()
+
+
+def relation_status_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS relation_status (
+        relation_status_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+        name TEXT
+        )
+    ''')
+
+    relation_status = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ']
+
+    for status in relation_status:
+        cursor.execute('INSERT INTO relation_status (name) VALUES (?)', (status,))
+
+    conn.commit()
+
 
 def area_table_create(conn, cursor):
     cursor.execute('''
@@ -385,6 +411,8 @@ def industries_dict_update(conn, cursor):
 def create_database(conn, cursor):
     area_table_create(conn, cursor)
     vacancy_type_table_create(conn, cursor)
+    relation_table_create(conn, cursor)
+    relation_status_table_create(conn, cursor)
     experience_table_create(conn, cursor)
     schedule_table_create(conn, cursor)
     employment_table_create(conn, cursor)

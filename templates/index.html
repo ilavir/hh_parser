@@ -28,6 +28,13 @@
             </div>
         </div>
     </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <p>Всего вакансий: {{ pagination.total }}</p>
+            </div>
+        </div>
+    </div>
     <div class="container my-4">
         <div class="row">
             <div class="col">
@@ -44,7 +51,7 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <table class="table ">
+                <table class="table">
                     <thead>
                         <tr>
                             <th scope="col">HH ID</th>
@@ -54,13 +61,15 @@
                             <th scope="col">Зарплата</th>
                             <th scope="col">Работодатель</th>
                             <th scope="col">Обновлено</th>
+                            <th scope="col">Избранное</th>
+                            <th scope="col">Статус</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for vacancy in vacancies %}
                             <tr class="pt-4 table-group-divider">
                                 <td><a href="https://hh.ru/vacancy/{{ vacancy[0] }}" target="_blank">{{ vacancy[0] }}</a></td>
-                                <td><a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[0]) }}" target="_blank">{{ vacancy[1] }}</a></td>
+                                <td><a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[0]) }}">{{ vacancy[1] }}</a></td>
                                 <td>{{ vacancy[2] }}</td>
                                 <td>{{ vacancy[3] }}</td>
                                 <td>
@@ -72,9 +81,11 @@
                                 </td>
                                 <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
                                 <td>{{ vacancy[7] }}</td>
+                                <td>{{ vacancy[9] }}</td>
+                                <td>{{ vacancy[10] }}</td>
                             </tr>
                             <tr>
-                                <td colspan="7" class="table-light">
+                                <td colspan="9" class="table-light">
                                     {% set requirement = vacancy[8]['requirement'] if vacancy[8] else None %}
                                     {% set responsibility = vacancy[8]['responsibility'] if vacancy[8] else None %}
 
