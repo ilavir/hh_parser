@@ -22,7 +22,7 @@
             </div>
             <div class="col text-end">
                 <p class="mb-0">{{ vacancy[7] }}, {{ vacancy[6] }}</p>
-                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1]) }}" method="get" onsubmit="return submitForm(this);">
+                <form action="{{ url_for('vacancy_detail', hh_id=vacancy[1]) }}" method="get" onsubmit="return submitForm(this);">
                     <input type="hidden" name="db" value="{{ selected_db }}">
                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
 
