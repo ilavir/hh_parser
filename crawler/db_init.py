@@ -107,31 +107,32 @@ def employers_table_create(conn, cursor):
     conn.commit()
 
 
-def relation_table_create(conn, cursor):
+def vacancy_relation_table_create(conn, cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS relation (
-            relation_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+        CREATE TABLE IF NOT EXISTS vacancy_relation (
+            vacancy_relation_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             vacancy_id INTEGER NOT NULL UNIQUE,
             favorite BOOLEAN,
-            relation_status_id INTEGER,
+            vacancy_relation_status_id INTEGER,
+            notes TEXT,
             cover_letter TEXT
         )
     ''')
     conn.commit()
 
 
-def relation_status_table_create(conn, cursor):
+def vacancy_relation_status_table_create(conn, cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS relation_status (
-        relation_status_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+        CREATE TABLE IF NOT EXISTS vacancy_relation_status (
+        vacancy_relation_status_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
         name TEXT UNIQUE
         )
     ''')
-    
-    relation_status_list = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ']
+
+    relation_status_list = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ', 'Не подхожу', 'Не интересно']
 
     for status in relation_status_list:
-        cursor.execute('INSERT OR IGNORE INTO relation_status (name) VALUES (?)', (status,))
+        cursor.execute('INSERT OR IGNORE INTO vacancy_relation_status (name) VALUES (?)', (status,))
 
     conn.commit()
 
@@ -412,8 +413,8 @@ def industries_dict_update(conn, cursor):
 def create_database(conn, cursor):
     area_table_create(conn, cursor)
     vacancy_type_table_create(conn, cursor)
-    relation_table_create(conn, cursor)
-    relation_status_table_create(conn, cursor)
+    vacancy_relation_table_create(conn, cursor)
+    vacancy_relation_status_table_create(conn, cursor)
     experience_table_create(conn, cursor)
     schedule_table_create(conn, cursor)
     employment_table_create(conn, cursor)

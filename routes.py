@@ -2,7 +2,7 @@ from math import ceil
 from flask import render_template, request
 from app import app
 from functions import (get_database_files, get_employer_by_id, get_vacancies,
-                       get_vacancy_by_id, get_relation_status_list, change_relation_status)
+                       get_vacancy_by_id, get_vacancy_relation_status_list, change_vacancy_relation_status)
 
 
 @app.route('/')
@@ -13,8 +13,7 @@ def index():
     relation_status = request.args.get('relation_status', None)
 
     if relation_status:
-        print('Change status: ', relation_status, vacancy_id)
-        change_relation_status(selected_db, vacancy_id, relation_status)
+        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
     page = request.args.get('page', 1, type=int)
     per_page = 20
@@ -23,7 +22,7 @@ def index():
     vacancies, total_vacancies = get_vacancies(selected_db, offset=offset, per_page=per_page)
     pagination = {'page': page, 'per_page': per_page,
                   'total': total_vacancies, 'pages': ceil(total_vacancies / per_page)}
-    relation_status_list = get_relation_status_list(selected_db)
+    relation_status_list = get_vacancy_relation_status_list(selected_db)
 
     return render_template('index.html', db_files=db_files, selected_db=selected_db,
                            vacancies=vacancies, pagination=pagination, status_list=relation_status_list)
