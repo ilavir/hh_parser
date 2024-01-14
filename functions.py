@@ -81,9 +81,10 @@ def change_vacancy_relation_status(selected_db, vacancy_id, relation_status):
 def get_vacancy_by_id(selected_db, vacancy_id):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
+        SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
         vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
-        employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts
+        employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts,
+        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id
         FROM vacancy
         JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
         JOIN experience ON vacancy.experience_id = experience.experience_id
@@ -92,6 +93,7 @@ def get_vacancy_by_id(selected_db, vacancy_id):
         JOIN employer ON vacancy.employer_id = employer.employer_id
         JOIN employment ON vacancy.employment_id = employment.employment_id
         JOIN area ON vacancy.area_id = area.area_id
+        LEFT JOIN vacancy_relation ON vacancy.vacancy_id = vacancy_relation.vacancy_id
         WHERE vacancy.hh_id = ?
     """
     cursor.execute(query, (vacancy_id,))
@@ -101,7 +103,7 @@ def get_vacancy_by_id(selected_db, vacancy_id):
     dt_object = datetime.strptime(vacancy[6], "%Y-%m-%dT%H:%M:%S%z")
     formatted_date = dt_object.strftime("%d.%m.%Y")
     vacancy = vacancy[:6] + (formatted_date,) + (vacancy[7],) + (json.loads(vacancy[8]),) + vacancy[9:12] + (
-        json.loads(vacancy[12]),) + vacancy[13:19] + (json.loads(vacancy[19]),) + (json.loads(vacancy[20]),)
+        json.loads(vacancy[12]),) + vacancy[13:19] + (json.loads(vacancy[19]),) + (json.loads(vacancy[20]),) + vacancy[21:]
 
     conn.close()
 

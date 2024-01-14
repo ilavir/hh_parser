@@ -31,12 +31,20 @@ def index():
 @app.route('/vacancy/<hh_id>')
 def vacancy_detail(hh_id):
     selected_db = request.args.get('db')
+    vacancy_id = request.args.get('vacancy_id', None)
+    relation_status = request.args.get('relation_status', None)
+
+    if relation_status:
+        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
+
     vacancy = get_vacancy_by_id(selected_db, hh_id)
 
     if not vacancy:
         return "Vacancy not found", 404
 
-    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db)
+    relation_status_list = get_vacancy_relation_status_list(selected_db)
+
+    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list)
 
 
 @app.route('/employer/<hh_id>')
