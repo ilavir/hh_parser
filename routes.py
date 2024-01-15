@@ -3,7 +3,8 @@ from flask import render_template, request
 from app import app
 from functions import (get_database_files, get_employer_by_id, get_vacancies,
                        get_vacancy_by_id, get_vacancy_relation_status_list,
-                       change_vacancy_relation_status, change_relation_notes, change_relation_cover_letter, change_vacancy_relation_favorite)
+                       change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_cover_letter, change_vacancy_relation_favorite,
+                       change_employer_relation_notes)
 
 
 @app.route('/', methods = ['POST', 'GET'])
@@ -52,10 +53,10 @@ def vacancy_detail(hh_id):
     cover_letter = request.form.get('cover_letter', None)
 
     if notes_content is not None:
-        change_relation_notes(selected_db, vacancy_id, notes_content)
+        change_vacancy_relation_notes(selected_db, vacancy_id, notes_content)
 
     if cover_letter is not None:
-        change_relation_cover_letter(selected_db, vacancy_id, cover_letter)
+        change_vacancy_relation_cover_letter(selected_db, vacancy_id, cover_letter)
 
     if relation_status:
         change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
@@ -70,12 +71,19 @@ def vacancy_detail(hh_id):
     return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list)
 
 
-@app.route('/employer/<hh_id>')
+@app.route('/employer/<hh_id>', methods = ['POST', 'GET'])
 def employer_detail(hh_id):
     selected_db = request.args.get('db')
+
+    employer_id = request.form.get('employer_id', None)
+    notes_content = request.form.get('notes_content', None)
+
+    if notes_content is not None:
+        change_employer_relation_notes(selected_db, employer_id, notes_content)
+
     employer, industries = get_employer_by_id(selected_db, hh_id)
 
     if not employer:
         return "Employer not found", 404
 
-    return render_template('employer.html', employer=employer, industries=industries)
+    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries)

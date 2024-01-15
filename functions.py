@@ -81,29 +81,14 @@ def get_vacancy_relation_status_list(selected_db):
     return relation_status_list
 
 
-def change_vacancy_relation_status(selected_db, vacancy_id, relation_status):
-    conn, cursor = db_connect(selected_db)
-
-    if relation_status == 'None':
-        relation_status = None
-
-    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, vacancy_relation_status_id) VALUES (?, ?)"""
-    cursor.execute(query, (vacancy_id, relation_status))
-
-    query = """UPDATE vacancy_relation SET vacancy_relation_status_id = ? WHERE vacancy_id = ?"""
-    cursor.execute(query, (relation_status, vacancy_id))
-
-    conn.commit()
-    conn.close()
-
-
 def get_vacancy_by_id(selected_db, vacancy_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
         SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
         vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
         employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts,
-        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.cover_letter
+        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.cover_letter,
+        employer_relation.notes
         FROM vacancy
         JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
         JOIN experience ON vacancy.experience_id = experience.experience_id
@@ -113,6 +98,7 @@ def get_vacancy_by_id(selected_db, vacancy_hh_id):
         JOIN employment ON vacancy.employment_id = employment.employment_id
         JOIN area ON vacancy.area_id = area.area_id
         LEFT JOIN vacancy_relation ON vacancy.vacancy_id = vacancy_relation.vacancy_id
+        LEFT JOIN employer_relation ON vacancy.employer_id = employer_relation.employer_id
         WHERE vacancy.hh_id = ?
     """
     cursor.execute(query, (vacancy_hh_id,))
@@ -129,7 +115,23 @@ def get_vacancy_by_id(selected_db, vacancy_hh_id):
     return vacancy
 
 
-def change_relation_notes(selected_db, vacancy_id, notes_content):
+def change_vacancy_relation_status(selected_db, vacancy_id, relation_status):
+    conn, cursor = db_connect(selected_db)
+
+    if relation_status == 'None':
+        relation_status = None
+
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, vacancy_relation_status_id) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, relation_status))
+
+    query = """UPDATE vacancy_relation SET vacancy_relation_status_id = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (relation_status, vacancy_id))
+
+    conn.commit()
+    conn.close()
+
+
+def change_vacancy_relation_notes(selected_db, vacancy_id, notes_content):
     conn, cursor = db_connect(selected_db)
 
     if notes_content == '':
@@ -146,7 +148,7 @@ def change_relation_notes(selected_db, vacancy_id, notes_content):
 
 
 
-def change_relation_cover_letter(selected_db, vacancy_id, cover_letter):
+def change_vacancy_relation_cover_letter(selected_db, vacancy_id, cover_letter):
     conn, cursor = db_connect(selected_db)
 
     if cover_letter == '':
@@ -165,10 +167,11 @@ def change_relation_cover_letter(selected_db, vacancy_id, cover_letter):
 def get_employer_by_id(selected_db, employer_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT employer.*, area.name, employer_type.name
+        SELECT employer.*, area.name, employer_type.name, employer_relation.notes
         FROM employer
         JOIN area ON employer.area = area.area_id
         JOIN employer_type ON employer.type = employer_type.employer_type_id
+        LEFT JOIN employer_relation ON employer.employer_id = employer_relation.employer_id
         WHERE employer.hh_id = ?
     """
     cursor.execute(query, (employer_hh_id,))
@@ -197,3 +200,19 @@ def get_employer_by_id(selected_db, employer_hh_id):
     conn.close()
 
     return employer, industries
+
+
+def change_employer_relation_notes(selected_db, employer_id, notes_content):
+    conn, cursor = db_connect(selected_db)
+
+    if notes_content == '':
+        notes_content = None
+
+    query = """INSERT OR IGNORE INTO employer_relation (employer_id, notes) VALUES (?, ?)"""
+    cursor.execute(query, (employer_id, notes_content))
+
+    query = """UPDATE employer_relation SET notes = ? WHERE employer_id = ?"""
+    cursor.execute(query, (notes_content, employer_id))
+
+    conn.commit()
+    conn.close()

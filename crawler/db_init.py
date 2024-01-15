@@ -60,7 +60,7 @@ def initialize_database():
     return conn, cursor
 
 
-def vacancies_table_create(conn, cursor):
+def vacancy_table_create(conn, cursor):
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vacancy (
             vacancy_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -83,25 +83,6 @@ def vacancies_table_create(conn, cursor):
             archived BOOLEAN,
             published_at DATETIME,
             employer_id INTEGER
-        )
-    ''')
-    conn.commit()
-
-def employers_table_create(conn, cursor):
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS employer (
-            employer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            hh_id INTEGER UNIQUE,
-            name TEXT,
-            description TEXT,
-            site_url TEXT,
-            url TEXT,
-            alternate_url TEXT,
-            vacancies_url TEXT,
-            trusted BOOLEAN,
-            area TEXT,
-            type TEXT,
-            industries TEXT
         )
     ''')
     conn.commit()
@@ -134,6 +115,37 @@ def vacancy_relation_status_table_create(conn, cursor):
     for status in relation_status_list:
         cursor.execute('INSERT OR IGNORE INTO vacancy_relation_status (name) VALUES (?)', (status,))
 
+    conn.commit()
+
+
+def employer_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS employer (
+            employer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            hh_id INTEGER UNIQUE,
+            name TEXT,
+            description TEXT,
+            site_url TEXT,
+            url TEXT,
+            alternate_url TEXT,
+            vacancies_url TEXT,
+            trusted BOOLEAN,
+            area TEXT,
+            type TEXT,
+            industries TEXT
+        )
+    ''')
+    conn.commit()
+
+
+def employer_relation_table_create(conn, cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS employer_relation (
+            employer_relation_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            employer_id INTEGER NOT NULL UNIQUE,
+            notes TEXT
+        )
+    ''')
     conn.commit()
 
 
@@ -411,18 +423,21 @@ def industries_dict_update(conn, cursor):
     conn.commit()
 
 def create_database(conn, cursor):
-    area_table_create(conn, cursor)
-    vacancy_type_table_create(conn, cursor)
+    vacancy_table_create(conn, cursor)
     vacancy_relation_table_create(conn, cursor)
     vacancy_relation_status_table_create(conn, cursor)
+    employer_table_create(conn, cursor)
+    employer_relation_table_create(conn, cursor)
+
+    area_table_create(conn, cursor)
+    vacancy_type_table_create(conn, cursor)
     experience_table_create(conn, cursor)
     schedule_table_create(conn, cursor)
     employment_table_create(conn, cursor)
     professional_roles_table_create(conn, cursor)
     employer_type_table_create(conn, cursor)
     industries_table_create(conn, cursor)
-    vacancies_table_create(conn, cursor)
-    employers_table_create(conn, cursor)
+
 
 def update_dictionaries(conn, cursor):
     area_dict_update(conn, cursor)
