@@ -28,7 +28,7 @@ def get_vacancies(selected_db, offset=0, per_page=20):
         JOIN schedule ON vacancy.schedule_id = schedule.schedule_id
         JOIN employer ON vacancy.employer_id = employer.employer_id
         LEFT JOIN vacancy_relation ON vacancy.vacancy_id = vacancy_relation.vacancy_id
-        ORDER BY vacancy.published_at DESC
+        ORDER BY vacancy_relation.favorite DESC, vacancy.published_at DESC
         LIMIT ? OFFSET ?;
     """
     cursor.execute(query, (per_page, offset))
@@ -167,11 +167,12 @@ def change_vacancy_relation_cover_letter(selected_db, vacancy_id, cover_letter):
 def get_employer_by_id(selected_db, employer_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT employer.*, area.name, employer_type.name, employer_relation.notes
+        SELECT employer.*, area.name, employer_type.name, employer_relation.notes, vacancy.hh_id
         FROM employer
         JOIN area ON employer.area = area.area_id
         JOIN employer_type ON employer.type = employer_type.employer_type_id
         LEFT JOIN employer_relation ON employer.employer_id = employer_relation.employer_id
+        LEFT JOIN vacancy ON employer.employer_id = vacancy.employer_id
         WHERE employer.hh_id = ?
     """
     cursor.execute(query, (employer_hh_id,))

@@ -11,6 +11,9 @@
     <div class="container my-4">
         <div class="row">
             <div class="col text-center {{ 'bg-secondary' if vacancy[5] == 1 }}">
+                <div class="float-start mt-2">
+                    <a href="{{ url_for('index', db=selected_db, page=page)}}" class="btn btn-primary">К списку</a>
+                </div>
                 <h1>{{ vacancy[4] }}</h1>
             </div>
         </div>
@@ -18,12 +21,11 @@
     <div class="container">
         <div class="row mb-3">
             <div class="col">
-                <p><strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a></p>
+                <p><strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a>,
+                    <a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], vacancy_id=vacancy[0], favorite=('1' if not vacancy[21] or vacancy[21] == 0 else '0' )) }}">{{ 'Убрать из избранного' if vacancy[21] == 1 else 'В избранное' }}</a></p>
             </div>
             <div class="col text-end">
-                <p class="mb-0"><!-- открытая вакансия {{ vacancy[7] }}, -->
-                    <a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], vacancy_id=vacancy[0], favorite=('1' if not vacancy[21] or vacancy[21] == 0 else '0' )) }}">{{ 'Убрать из избранного' if vacancy[21] == 1 else 'В избранное' }}</a>,
-                    {{ vacancy[6] }}</p>
+                <p class="mb-0">{{ vacancy[6] }}</p>
                 <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1]) }}" method="post" onsubmit="return submitForm(this);">
                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
 
@@ -54,7 +56,7 @@
                 <p class="mb-0"><strong>График:</strong> {{ vacancy[10] }}</p>
             </div>
             <div class="col-4 text-end">
-                <p><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[14]) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
+                <p><a href="{{ url_for('employer_detail', hh_id=vacancy[14], db=selected_db, vacancy_hh_id=vacancy[1]) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
                 {% if vacancy[25] %}<p><pre>{{ vacancy[25] }}</pre></p>{% endif %}
                 {% if vacancy[19] %}
                     {% set address_raw = vacancy[19]['raw'] %}
@@ -66,9 +68,9 @@
                     {% set contacts_email = vacancy[20]['email'] %}
 
                     <p class="mb-0">{{ contacts_name }}</p>
-                    <p class="mb-0">{{ '<a href="mailto:{}">{}</a>'.format(contacts_email, contacts_email)|safe }}</p>
+                    {% if contacts_email %}<p class="mb-0">{{ '<a href="mailto:{}">{}</a>'.format(contacts_email, contacts_email)|safe }}</p>{% endif %}
                     <p>{% for phone in vacancy[20]['phones'] %}
-                            +{{ phone['formatted'] }}{% if not loop.last %}, {% endif %}
+                            +{{ phone['country'] }} {{ phone['city'] }} {{ phone['number'] }}{% if not loop.last %}, {% endif %}
                         {% endfor %}</p>
                 {% endif %}
             </div>

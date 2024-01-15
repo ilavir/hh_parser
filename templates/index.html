@@ -40,7 +40,7 @@
                 <ul class="pagination">
                     {% for page_num in range(1, pagination.pages + 1) %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('index', page=page_num, db=selected_db) }}">{{ page_num }}</a>
+                            <a class="page-link" href="{{ url_for('index', db=selected_db, page=page_num) }}">{{ page_num }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -68,7 +68,7 @@
                         {% for vacancy in vacancies %}
                             <tr class="pt-4 table-group-divider">
                                 <td><a href="https://hh.ru/vacancy/{{ vacancy[0] }}" target="_blank">{{ vacancy[0] }}</a></td>
-                                <td><a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[0]) }}">{{ vacancy[1] }}</a></td>
+                                <td><a href="{{ url_for('vacancy_detail', hh_id=vacancy[0], db=selected_db, page=pagination.page) }}">{{ vacancy[1] }}</a></td>
                                 <td>{{ vacancy[2] }}</td>
                                 <td>{{ vacancy[3] }}</td>
                                 <td>
@@ -78,10 +78,10 @@
                                     
                                     {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy[4] else '---' }}
                                 </td>
-                                <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
-                                <td><a href="{{ url_for('index', page=pagination.page, db=selected_db, vacancy_id=vacancy[11], favorite=('1' if not vacancy[9] or vacancy[9] == 0 else '0' )) }}">{{ 'Избранная' if vacancy[9] == 1 else 'нет' }}</a></td>
+                                <td><a href="{{ url_for('employer_detail', hh_id=vacancy[5], db=selected_db, vacancy_hh_id=vacancy[0]) }}">{{ vacancy[6] }}</a></td>
+                                <td class="text-nowrap"><a href="{{ url_for('index', db=selected_db, page=pagination.page, vacancy_id=vacancy[11], favorite=('1' if not vacancy[9] or vacancy[9] == 0 else '0' )) }}">{{ 'Убрать' if vacancy[9] == 1 else 'В избранное' }}</a></td>
                                 <td>
-                                    <form action="{{ url_for('index', page=pagination.page, db=selected_db) }}" method="post" onsubmit="return submitForm(this);">
+                                    <form action="{{ url_for('index', db=selected_db, page=pagination.page) }}" method="post" onsubmit="return submitForm(this);">
                                         <input type="hidden" name="vacancy_id" value="{{ vacancy[11] }}">
 
                                         <select name="relation_status" id="relation_status" onchange="this.form.submit()">
@@ -115,7 +115,7 @@
                 <ul class="pagination">
                     {% for page_num in range(1, pagination.pages + 1) %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('index', page=page_num, db=selected_db) }}">{{ page_num }}</a>
+                            <a class="page-link" href="{{ url_for('index', db=selected_db, page=page_num) }}">{{ page_num }}</a>
                         </li>
                     {% endfor %}
                 </ul>

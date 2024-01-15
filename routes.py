@@ -40,6 +40,7 @@ def index():
 @app.route('/vacancy/<hh_id>', methods = ['POST', 'GET'])
 def vacancy_detail(hh_id):
     selected_db = request.args.get('db')
+    page_source = request.args.get('page', 1)
 
     vacancy_id_get = request.args.get('vacancy_id', None)
     relation_favorite = request.args.get('favorite', None)
@@ -68,12 +69,14 @@ def vacancy_detail(hh_id):
 
     relation_status_list = get_vacancy_relation_status_list(selected_db)
 
-    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list)
+    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list, page=page_source)
 
 
 @app.route('/employer/<hh_id>', methods = ['POST', 'GET'])
 def employer_detail(hh_id):
     selected_db = request.args.get('db')
+    vacancy_source = request.args.get('vacancy_hh_id', None)
+    print(vacancy_source)
 
     employer_id = request.form.get('employer_id', None)
     notes_content = request.form.get('notes_content', None)
@@ -86,4 +89,4 @@ def employer_detail(hh_id):
     if not employer:
         return "Employer not found", 404
 
-    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries)
+    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source)
