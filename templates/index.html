@@ -80,11 +80,9 @@
                                 </td>
                                 <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
                                 <td>{{ vacancy[7] }}</td>
-                                <td>{{ vacancy[9] }}</td>
+                                <td><a href="{{ url_for('index', page=pagination.page, db=selected_db, vacancy_id=vacancy[11], favorite=('1' if not vacancy[9] or vacancy[9] == 0 else '0' )) }}">{{ 'Избранная' if vacancy[9] == 1 else 'нет' }}</a></td>
                                 <td>
-                                    <form action="{{ url_for('index') }}" method="get" onsubmit="return submitForm(this);">
-                                        <input type="hidden" name="page" value="{{ pagination.page }}">
-                                        <input type="hidden" name="db" value="{{ selected_db }}">
+                                    <form action="{{ url_for('index', page=pagination.page, db=selected_db) }}" method="post" onsubmit="return submitForm(this);">
                                         <input type="hidden" name="vacancy_id" value="{{ vacancy[11] }}">
 
                                         <select name="relation_status" id="relation_status" onchange="this.form.submit()">

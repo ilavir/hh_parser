@@ -2,16 +2,24 @@ from math import ceil
 from flask import render_template, request
 from app import app
 from functions import (get_database_files, get_employer_by_id, get_vacancies,
-                       get_vacancy_by_id, get_vacancy_relation_status_list, change_vacancy_relation_status)
+                       get_vacancy_by_id, get_vacancy_relation_status_list,
+                       change_vacancy_relation_status, change_relation_notes, change_relation_cover_letter, change_vacancy_relation_favorite)
 
 
-@app.route('/')
+@app.route('/', methods = ['POST', 'GET'])
 def index():
     db_files = get_database_files()
-    selected_db = request.args.get('db', db_files[0] if db_files else None)
-    vacancy_id = request.args.get('vacancy_id', None)
-    relation_status = request.args.get('relation_status', None)
 
+    selected_db = request.args.get('db', db_files[0] if db_files else None)
+    vacancy_id_get = request.args.get('vacancy_id', None)
+    relation_favorite = request.args.get('favorite', None)
+
+    vacancy_id = request.form.get('vacancy_id', None)
+    relation_status = request.form.get('relation_status', None)
+
+    if relation_favorite:
+        change_vacancy_relation_favorite(selected_db, vacancy_id_get, relation_favorite)
+        
     if relation_status:
         change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
@@ -28,11 +36,19 @@ def index():
                            vacancies=vacancies, pagination=pagination, status_list=relation_status_list)
 
 
-@app.route('/vacancy/<hh_id>')
+@app.route('/vacancy/<hh_id>', methods = ['POST', 'GET'])
 def vacancy_detail(hh_id):
     selected_db = request.args.get('db')
-    vacancy_id = request.args.get('vacancy_id', None)
-    relation_status = request.args.get('relation_status', None)
+    vacancy_id = request.form.get('vacancy_id', None)
+    relation_status = request.form.get('relation_status', None)
+    notes_content = request.form.get('notes_content', None)
+    cover_letter = request.form.get('cover_letter', None)
+
+    if notes_content is not None:
+        change_relation_notes(selected_db, vacancy_id, notes_content)
+
+    if cover_letter is not None:
+        change_relation_cover_letter(selected_db, vacancy_id, cover_letter)
 
     if relation_status:
         change_vacancy_relation_status(selected_db, vacancy_id, relation_status)

@@ -129,7 +129,7 @@ def vacancy_relation_status_table_create(conn, cursor):
         )
     ''')
 
-    relation_status_list = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Отказ', 'Не подхожу', 'Не интересно']
+    relation_status_list = ['Откликнулся', 'Ответили', 'Тестовое задание', 'Собеседование', 'Далеко офис', 'Не подхожу', 'Не интересно', 'Оффер!', 'Отказ']
 
     for status in relation_status_list:
         cursor.execute('INSERT OR IGNORE INTO vacancy_relation_status (name) VALUES (?)', (status,))

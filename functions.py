@@ -50,6 +50,25 @@ def get_vacancies(selected_db, offset=0, per_page=20):
     return vacancies, total_vacancies
 
 
+def change_vacancy_relation_favorite(selected_db, vacancy_id, relation_favorite):
+    conn, cursor = db_connect(selected_db)
+
+    if relation_favorite == '0':
+        relation_favorite = 0
+    elif relation_favorite == '1':
+        relation_favorite = 1
+
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, favorite) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, relation_favorite))
+
+    query = """UPDATE vacancy_relation SET favorite = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (relation_favorite, vacancy_id))
+
+    conn.commit()
+    conn.close()
+
+
+
 def get_vacancy_relation_status_list(selected_db):
     conn, cursor = db_connect(selected_db)
 
@@ -78,13 +97,13 @@ def change_vacancy_relation_status(selected_db, vacancy_id, relation_status):
     conn.close()
 
 
-def get_vacancy_by_id(selected_db, vacancy_id):
+def get_vacancy_by_id(selected_db, vacancy_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
         SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
         vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
         employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts,
-        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id
+        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.cover_letter
         FROM vacancy
         JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
         JOIN experience ON vacancy.experience_id = experience.experience_id
@@ -96,7 +115,7 @@ def get_vacancy_by_id(selected_db, vacancy_id):
         LEFT JOIN vacancy_relation ON vacancy.vacancy_id = vacancy_relation.vacancy_id
         WHERE vacancy.hh_id = ?
     """
-    cursor.execute(query, (vacancy_id,))
+    cursor.execute(query, (vacancy_hh_id,))
     vacancy = cursor.fetchone()
 
     # Convertions
@@ -110,7 +129,40 @@ def get_vacancy_by_id(selected_db, vacancy_id):
     return vacancy
 
 
-def get_employer_by_id(selected_db, vacancy_id):
+def change_relation_notes(selected_db, vacancy_id, notes_content):
+    conn, cursor = db_connect(selected_db)
+
+    if notes_content == '':
+        notes_content = None
+
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, notes) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, notes_content))
+
+    query = """UPDATE vacancy_relation SET notes = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (notes_content, vacancy_id))
+
+    conn.commit()
+    conn.close()
+
+
+
+def change_relation_cover_letter(selected_db, vacancy_id, cover_letter):
+    conn, cursor = db_connect(selected_db)
+
+    if cover_letter == '':
+        cover_letter = None
+
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, cover_letter) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, cover_letter))
+
+    query = """UPDATE vacancy_relation SET cover_letter = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (cover_letter, vacancy_id))
+
+    conn.commit()
+    conn.close()
+
+
+def get_employer_by_id(selected_db, employer_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
         SELECT employer.*, area.name, employer_type.name
@@ -119,7 +171,7 @@ def get_employer_by_id(selected_db, vacancy_id):
         JOIN employer_type ON employer.type = employer_type.employer_type_id
         WHERE employer.hh_id = ?
     """
-    cursor.execute(query, (vacancy_id,))
+    cursor.execute(query, (employer_hh_id,))
     employer = cursor.fetchone()
 
     # Convertions
