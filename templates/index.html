@@ -59,9 +59,9 @@
                             <th scope="col">График</th>
                             <th scope="col">Зарплата</th>
                             <th scope="col">Работодатель</th>
-                            <th scope="col">Обновлено</th>
                             <th scope="col">Избранное</th>
                             <th scope="col">Статус</th>
+                            <th scope="col">Обновлено</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -79,7 +79,6 @@
                                     {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy[4] else '---' }}
                                 </td>
                                 <td><a href="{{ url_for('employer_detail', db=selected_db, hh_id=vacancy[5]) }}">{{ vacancy[6] }}</a></td>
-                                <td>{{ vacancy[7] }}</td>
                                 <td><a href="{{ url_for('index', page=pagination.page, db=selected_db, vacancy_id=vacancy[11], favorite=('1' if not vacancy[9] or vacancy[9] == 0 else '0' )) }}">{{ 'Избранная' if vacancy[9] == 1 else 'нет' }}</a></td>
                                 <td>
                                     <form action="{{ url_for('index', page=pagination.page, db=selected_db) }}" method="post" onsubmit="return submitForm(this);">
@@ -93,6 +92,7 @@
                                         </select>
                                     </form>
                                 </td>
+                                <td>{{ vacancy[7] }}</td>
                             </tr>
                             <tr>
                                 <td colspan="9" class="table-light">

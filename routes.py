@@ -39,6 +39,13 @@ def index():
 @app.route('/vacancy/<hh_id>', methods = ['POST', 'GET'])
 def vacancy_detail(hh_id):
     selected_db = request.args.get('db')
+
+    vacancy_id_get = request.args.get('vacancy_id', None)
+    relation_favorite = request.args.get('favorite', None)
+
+    if relation_favorite:
+        change_vacancy_relation_favorite(selected_db, vacancy_id_get, relation_favorite)
+
     vacancy_id = request.form.get('vacancy_id', None)
     relation_status = request.form.get('relation_status', None)
     notes_content = request.form.get('notes_content', None)
