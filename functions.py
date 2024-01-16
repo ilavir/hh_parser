@@ -87,7 +87,7 @@ def get_vacancy_by_id(selected_db, vacancy_hh_id):
         SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
         vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
         employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts,
-        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.cover_letter,
+        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.conversation,
         employer_relation.notes
         FROM vacancy
         JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
@@ -148,17 +148,17 @@ def change_vacancy_relation_notes(selected_db, vacancy_id, notes_content):
 
 
 
-def change_vacancy_relation_cover_letter(selected_db, vacancy_id, cover_letter):
+def change_vacancy_relation_conversation_content(selected_db, vacancy_id, conversation_content):
     conn, cursor = db_connect(selected_db)
 
-    if cover_letter == '':
-        cover_letter = None
+    if conversation_content == '':
+        conversation_content = None
 
-    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, cover_letter) VALUES (?, ?)"""
-    cursor.execute(query, (vacancy_id, cover_letter))
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, conversation) VALUES (?, ?)"""
+    cursor.execute(query, (vacancy_id, conversation_content))
 
-    query = """UPDATE vacancy_relation SET cover_letter = ? WHERE vacancy_id = ?"""
-    cursor.execute(query, (cover_letter, vacancy_id))
+    query = """UPDATE vacancy_relation SET conversation = ? WHERE vacancy_id = ?"""
+    cursor.execute(query, (conversation_content, vacancy_id))
 
     conn.commit()
     conn.close()

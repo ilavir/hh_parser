@@ -100,12 +100,24 @@
                         <div class="col">
                             <p><button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditNotes" aria-expanded="false" aria-controls="collapseEditNotes">
                                 Редактировать примечания
+                            </button>
+                            <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditCoversation" aria-expanded="false" aria-controls="collapseEditCoversation">
+                                Показать переписку
                             </button></p>
                             <div class="collapse" id="collapseEditNotes">
                                 <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post">
                                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
 
-                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="10" name="notes_content">{{ vacancy[23] if vacancy[23] }}</textarea>
+                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ vacancy[23] if vacancy[23] }}</textarea>
+                                    <button type="submit" class="btn btn-primary my-2">Сохранить</button>
+                                </form>
+                            </div>
+                            <div class="collapse" id="collapseEditCoversation">
+
+                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post">
+                                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
+                                    <pre>{{ vacancy[24] if vacancy[24] }}</pre>
+                                    <textarea class="form-control" id="exampleFormControlTextarea2" rows="10" name="conversation_content">{{ vacancy[24] if vacancy[24] }}</textarea>
                                     <button type="submit" class="btn btn-primary my-2">Сохранить</button>
                                 </form>
                             </div>
@@ -115,39 +127,12 @@
 
             </div>
         </div>
-        <div class="row p-3 text-bg-light">
+        <div class="row mb-5 p-3 text-bg-light">
             <div class="col">
                 {{ vacancy[11][1:-1]|safe }}
             </div>
         </div>
-        <div class="row my-3 p-3 text-bg-light">
-            <div class="col">
 
-                <div class="container mx-0 px-0">
-                    <div class="row">
-                        <div class="col">
-                            <pre>{{ vacancy[24] if vacancy[24] }}</pre>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <p><button class="btn btn-outline-success my-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEditCoverLetter" aria-expanded="false" aria-controls="collapseEditCoverLetter">
-                                Редактировать сопроводительное письмо
-                            </button></p>
-                            <div class="collapse" id="collapseEditCoverLetter">
-                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post">
-                                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
-
-                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="10" name="cover_letter">{{ vacancy[24] if vacancy[24] }}</textarea>
-                                    <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
     </div>
     
 </body>

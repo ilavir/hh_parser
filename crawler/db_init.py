@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import requests
 import sqlite3
 import os
@@ -90,14 +92,15 @@ def vacancy_table_create(conn, cursor):
 
 def vacancy_relation_table_create(conn, cursor):
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS vacancy_relation (
-            vacancy_relation_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            vacancy_id INTEGER NOT NULL UNIQUE,
-            favorite BOOLEAN,
-            vacancy_relation_status_id INTEGER,
-            notes TEXT,
-            cover_letter TEXT
-        )
+        CREATE TABLE IF NOT EXISTS "vacancy_relation" (
+        "vacancy_relation_id"	INTEGER NOT NULL UNIQUE,
+        "vacancy_id"	INTEGER NOT NULL UNIQUE,
+        "favorite"	BOOLEAN DEFAULT 0,
+        "vacancy_relation_status_id"	INTEGER DEFAULT NULL,
+        "notes"	TEXT DEFAULT NULL,
+        "conversation"	TEXT DEFAULT NULL,
+        PRIMARY KEY("vacancy_relation_id" AUTOINCREMENT)
+    );
     ''')
     conn.commit()
 

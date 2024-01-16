@@ -53,7 +53,7 @@
                                 <form action="{{ url_for('employer_detail', hh_id=employer[1], db=selected_db, vacancy_hh_id=vacancy_source, page=page) }}" method="post">
                                     <input type="hidden" name="employer_id" value="{{ employer[0] }}">
 
-                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="10" name="notes_content">{{ employer[14] if employer[14] }}</textarea>
+                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ employer[14] if employer[14] }}</textarea>
                                     <button type="submit" class="btn btn-primary my-2">Сохранить</button>
                                 </form>
                             </div>

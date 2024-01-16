@@ -3,7 +3,7 @@ from flask import render_template, request
 from app import app
 from functions import (get_database_files, get_employer_by_id, get_vacancies,
                        get_vacancy_by_id, get_vacancy_relation_status_list,
-                       change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_cover_letter, change_vacancy_relation_favorite,
+                       change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                        change_employer_relation_notes)
 
 
@@ -51,16 +51,16 @@ def vacancy_detail(hh_id):
     vacancy_id = request.form.get('vacancy_id', None)
     relation_status = request.form.get('relation_status', None)
     notes_content = request.form.get('notes_content', None)
-    cover_letter = request.form.get('cover_letter', None)
+    conversation_content = request.form.get('conversation_content', None)
+
+    if relation_status:
+        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
     if notes_content is not None:
         change_vacancy_relation_notes(selected_db, vacancy_id, notes_content)
 
-    if cover_letter is not None:
-        change_vacancy_relation_cover_letter(selected_db, vacancy_id, cover_letter)
-
-    if relation_status:
-        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
+    if conversation_content is not None:
+        change_vacancy_relation_conversation_content(selected_db, vacancy_id, conversation_content)
 
     vacancy = get_vacancy_by_id(selected_db, hh_id)
 
