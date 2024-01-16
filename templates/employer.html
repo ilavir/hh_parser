@@ -13,9 +13,9 @@
             <div class="col text-center">
                 <div class="float-start mt-2">
                     {% if vacancy_source %}
-                        <a href="{{ url_for('vacancy_detail', hh_id=vacancy_source, db=selected_db)}}" class="btn btn-primary">К вакансии</a>
+                        <a href="{{ url_for('vacancy_detail', hh_id=vacancy_source, db=selected_db, page=page)}}" class="btn btn-primary">К вакансии</a>
                     {% endif %}
-                    <a href="{{ url_for('index', db=selected_db)}}" class="btn btn-primary">К списку</a>
+                    <a href="{{ url_for('index', db=selected_db, page=page)}}" class="btn btn-primary">К списку</a>
                 </div>
                 <h1>{{ employer[2] }}</h1>
             </div>
@@ -50,7 +50,7 @@
                                 Редактировать примечания
                             </button></p>
                             <div class="collapse" id="collapseEditNotes">
-                                <form action="{{ url_for('employer_detail', hh_id=employer[1], db=selected_db) }}" method="post">
+                                <form action="{{ url_for('employer_detail', hh_id=employer[1], db=selected_db, vacancy_hh_id=vacancy_source, page=page) }}" method="post">
                                     <input type="hidden" name="employer_id" value="{{ employer[0] }}">
 
                                     <textarea class="form-control" id="exampleFormControlTextarea1" rows="10" name="notes_content">{{ employer[14] if employer[14] }}</textarea>

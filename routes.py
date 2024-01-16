@@ -76,7 +76,7 @@ def vacancy_detail(hh_id):
 def employer_detail(hh_id):
     selected_db = request.args.get('db')
     vacancy_source = request.args.get('vacancy_hh_id', None)
-    print(vacancy_source)
+    page_source = request.args.get('page', 1)
 
     employer_id = request.form.get('employer_id', None)
     notes_content = request.form.get('notes_content', None)
@@ -89,4 +89,4 @@ def employer_detail(hh_id):
     if not employer:
         return "Employer not found", 404
 
-    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source)
+    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source, page=page_source)

@@ -78,7 +78,7 @@
                                     
                                     {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy[4] else '---' }}
                                 </td>
-                                <td><a href="{{ url_for('employer_detail', hh_id=vacancy[5], db=selected_db, vacancy_hh_id=vacancy[0]) }}">{{ vacancy[6] }}</a></td>
+                                <td><a href="{{ url_for('employer_detail', hh_id=vacancy[5], db=selected_db, vacancy_hh_id=vacancy[0], page=pagination.page) }}">{{ vacancy[6] }}</a></td>
                                 <td class="text-nowrap"><a href="{{ url_for('index', db=selected_db, page=pagination.page, vacancy_id=vacancy[11], favorite=('1' if not vacancy[9] or vacancy[9] == 0 else '0' )) }}">{{ 'Убрать' if vacancy[9] == 1 else 'В избранное' }}</a></td>
                                 <td>
                                     <form action="{{ url_for('index', db=selected_db, page=pagination.page) }}" method="post" onsubmit="return submitForm(this);">
