@@ -66,7 +66,14 @@
                     </thead>
                     <tbody>
                         {% for vacancy in vacancies %}
-                            <tr class="pt-4 table-group-divider">
+                            <tr class="pt-4 table-group-divider
+                            {{ 'bg-success bg-opacity-25' if vacancy[10] == 1 }}
+                            {{ 'bg-warning bg-opacity-25' if vacancy[10] == 2 }}
+                            {{ 'bg-danger bg-opacity-25' if vacancy[10] == 9 }}
+                            {{ 'bg-danger bg-opacity-10' if vacancy[10] == 6 }}
+                            {{ 'bg-secondary bg-opacity-25' if vacancy[10] == 7 }}
+                            
+                            ">
                                 <td><a href="https://hh.ru/vacancy/{{ vacancy[0] }}" target="_blank">{{ vacancy[0] }}</a></td>
                                 <td><a href="{{ url_for('vacancy_detail', hh_id=vacancy[0], db=selected_db, page=pagination.page) }}">{{ vacancy[1] }}</a></td>
                                 <td>{{ vacancy[2] }}</td>
