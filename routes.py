@@ -12,26 +12,15 @@ def index():
     db_files = get_database_files()
 
     selected_db = request.args.get('db', db_files[0] if db_files else None)
-    vacancy_id_get = request.args.get('vacancy_id', None)
-    relation_favorite = request.args.get('favorite', None)
-
-    vacancy_id = request.form.get('vacancy_id', None)
-    relation_status = request.form.get('relation_status', None)
-
-    if relation_favorite:
-        change_vacancy_relation_favorite(selected_db, vacancy_id_get, relation_favorite)
         
-    if relation_status:
-        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
-
     page = request.args.get('page', 1, type=int)
     per_page = 20
     offset = (page - 1) * per_page
 
+    relation_status_list = get_vacancy_relation_status_list(selected_db)
     vacancies, total_vacancies = get_vacancies(selected_db, offset=offset, per_page=per_page)
     pagination = {'page': page, 'per_page': per_page,
                   'total': total_vacancies, 'pages': ceil(total_vacancies / per_page)}
-    relation_status_list = get_vacancy_relation_status_list(selected_db)
 
     return render_template('index.html', db_files=db_files, selected_db=selected_db,
                            vacancies=vacancies, pagination=pagination, status_list=relation_status_list)
@@ -40,21 +29,11 @@ def index():
 @app.route('/vacancy/<hh_id>', methods = ['POST', 'GET'])
 def vacancy_detail(hh_id):
     selected_db = request.args.get('db')
-    page_source = request.args.get('page', 1)
-
-    vacancy_id_get = request.args.get('vacancy_id', None)
-    relation_favorite = request.args.get('favorite', None)
-
-    if relation_favorite:
-        change_vacancy_relation_favorite(selected_db, vacancy_id_get, relation_favorite)
+    page_source = request.args.get('page_source', 1)
 
     vacancy_id = request.form.get('vacancy_id', None)
-    relation_status = request.form.get('relation_status', None)
     notes_content = request.form.get('notes_content', None)
     conversation_content = request.form.get('conversation_content', None)
-
-    if relation_status:
-        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
     if notes_content is not None:
         change_vacancy_relation_notes(selected_db, vacancy_id, notes_content)
@@ -69,14 +48,14 @@ def vacancy_detail(hh_id):
 
     relation_status_list = get_vacancy_relation_status_list(selected_db)
 
-    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list, page=page_source)
+    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list, page_source=page_source)
 
 
 @app.route('/employer/<hh_id>', methods = ['POST', 'GET'])
 def employer_detail(hh_id):
     selected_db = request.args.get('db')
     vacancy_source = request.args.get('vacancy_hh_id', None)
-    page_source = request.args.get('page', 1)
+    page_source = request.args.get('page_source', 1)
 
     employer_id = request.form.get('employer_id', None)
     notes_content = request.form.get('notes_content', None)
@@ -89,4 +68,22 @@ def employer_detail(hh_id):
     if not employer:
         return "Employer not found", 404
 
-    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source, page=page_source)
+    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source, page_source=page_source)
+
+
+@app.route('/update_content', methods = ['POST'])
+def update_content():
+    selected_db = request.form.get('db')
+    vacancy_id = request.form.get('vacancy_id', None)
+    relation_status = request.form.get('relation_status', None)
+    relation_favorite = request.form.get('favorite', None)
+
+    if vacancy_id and relation_favorite:
+        change_vacancy_relation_favorite(selected_db, vacancy_id, relation_favorite)
+
+    print(selected_db, vacancy_id, relation_status)
+
+    if vacancy_id and relation_status:
+        change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
+
+    return 'Good'

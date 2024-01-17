@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
     <title>{{ vacancy[4] }}</title>
 </head>
 <body>
@@ -12,7 +11,7 @@
         <div class="row">
             <div class="col text-center {{ 'bg-secondary' if vacancy[5] == 1 }}">
                 <div class="float-start mt-2">
-                    <a href="{{ url_for('index', db=selected_db, page=page)}}" class="btn btn-primary">К списку</a>
+                    <a href="{{ url_for('index', db=selected_db, page=page_source)}}" class="btn btn-primary">К списку</a>
                 </div>
                 <h1>{{ vacancy[4] }}</h1>
             </div>
@@ -21,21 +20,34 @@
     <div class="container">
         <div class="row mb-3">
             <div class="col">
-                <p><strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a>,
-                    <a href="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], vacancy_id=vacancy[0], favorite=('1' if not vacancy[21] or vacancy[21] == 0 else '0' )) }}">{{ 'Убрать из избранного' if vacancy[21] == 1 else 'В избранное' }}</a></p>
+                <p>
+                    <strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a>
+                </p>
             </div>
             <div class="col text-end">
                 <p class="mb-0">{{ vacancy[6] }}</p>
-                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post" onsubmit="return submitForm(this);">
+                <!-- Status list form -->
+                <form id="vacancyRelationStatus" class="relationStatusForm float-end" action="{{ url_for('update_content') }}" method="post">
+                    <input type="hidden" name="db" value="{{ selected_db }}">
                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
 
-                    <select name="relation_status" id="relation_status" onchange="this.form.submit()">
+                    <select name="relation_status" id="relation_status">
                         <option value="None"></option>
                         {% for status in status_list %}
                             <option value="{{ status[0] }}" {% if vacancy[22] == status[0] %}selected{% endif %}>{{ status[1] }}</option>
                         {% endfor %}
                     </select>
                 </form>
+                <!-- / Status list form -->
+                <!-- Favorites checkbox form, AJAX -->
+                <form class="favoriteForm form-check float-end me-2" action="{{ url_for('update_content' )}}" method="post">
+                    <input type="hidden" name="db" value="{{ selected_db }}">
+                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
+
+                    <input class="form-check-input" type="checkbox" name="favorite_checkbox" id="favoriteCheckbox" value="{{ 1 if vacancy[21] == 1 else 0 }}" {{ 'checked' if vacancy[21] == 1 }}>
+                    <label class="form-check-label" for="favoriteCheckbox">В избранное</label>
+                </form>
+                <!-- / Favorites checkbox form, AJAX -->
             </div>
         </div>
         <div class="row">
@@ -56,7 +68,7 @@
                 <p class="mb-0"><strong>График:</strong> {{ vacancy[10] }}</p>
             </div>
             <div class="col-6 text-end">
-                <p><a href="{{ url_for('employer_detail', hh_id=vacancy[14], db=selected_db, vacancy_hh_id=vacancy[1], page=page) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
+                <p><a href="{{ url_for('employer_detail', hh_id=vacancy[14], db=selected_db, vacancy_hh_id=vacancy[1], page_source=page_source) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
                 {% if vacancy[25] %}<p><pre>{{ vacancy[25] }}</pre></p>{% endif %}
                 {% if vacancy[19] %}
                     {% set address_raw = vacancy[19]['raw'] %}
@@ -105,7 +117,7 @@
                                 Показать переписку
                             </button></p>
                             <div class="collapse" id="collapseEditNotes">
-                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post">
+                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page_source=page_source) }}" method="post">
                                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
 
                                     <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ vacancy[23] if vacancy[23] }}</textarea>
@@ -114,7 +126,7 @@
                             </div>
                             <div class="collapse" id="collapseEditCoversation">
 
-                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page=page) }}" method="post">
+                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page_source=page_source) }}" method="post">
                                     <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
                                     <pre>{{ vacancy[24] if vacancy[24] }}</pre>
                                     <textarea class="form-control" id="exampleFormControlTextarea2" rows="10" name="conversation_content">{{ vacancy[24] if vacancy[24] }}</textarea>
@@ -135,5 +147,73 @@
 
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Send AJAX data to update_content on favorite checkbox trigger -->
+    <script>
+        $(document).ready(function() {
+            $('.favoriteForm').change(function() {
+                // Get the form data
+                var form = $(this);
+                var timestamp = new Date().getTime();  // Add timestamp
+
+                // Get the value of the favorite_checkbox
+                var checkboxValue = form.find('input[name="favorite_checkbox"]').prop('checked') ? '1' : '0';
+                // Set the value of the favorite_checkbox field in the form data
+                form.find('input[name="favorite_checkbox"]').val(checkboxValue);
+
+                // Set the checkbox value explicitly in formData
+                var formData = form.serialize();
+                formData += '&favorite=' + checkboxValue;
+                console.log(formData)
+
+                // Make an AJAX request to the server
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ url_for("update_content", t=timestamp) }}',
+                    data: formData,
+                    success: function(response) {
+                        // Handle success, if needed
+                        console.log('Form submitted successfully');
+                    },
+                    error: function(error) {
+                        // Handle error, if needed
+                        console.error('Error submitting form:', error);
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- Send AJAX data to update_content on favorite checkbox trigger -->
+
+    <!-- Send AJAX data to update_content on vacancy status change -->
+    <script>
+        $(document).ready(function() {
+            $('.relationStatusForm').change(function() {
+                // Get the form data
+                var form = $(this);
+                var formData = form.serialize();
+                var timestamp = new Date().getTime();  // Add timestamp
+
+                // Make an AJAX request to the server
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ url_for("update_content", t=timestamp) }}',
+                    data: formData,
+                    success: function(response) {
+                        // Handle success, if needed
+                        console.log('Form submitted successfully');
+                    },
+                    error: function(error) {
+                        // Handle error, if needed
+                        console.error('Error submitting form:', error);
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- Send AJAX data to update_content on vacancy status change -->
+
 </body>
 </html>
