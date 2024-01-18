@@ -81,8 +81,6 @@ def update_content():
     if vacancy_id and relation_favorite:
         change_vacancy_relation_favorite(selected_db, vacancy_id, relation_favorite)
 
-    print(selected_db, vacancy_id, relation_status)
-
     if vacancy_id and relation_status:
         change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
