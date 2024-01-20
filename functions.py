@@ -22,7 +22,8 @@ def get_vacancies(selected_db, offset=0, per_page=20):
     query = """
         SELECT vacancy.hh_id, vacancy.name AS vacancy_name, area.name AS area_name, schedule.name AS schedule_name, vacancy.salary,
         employer.hh_id AS employer_hh_id, employer.name AS employer_name, vacancy.published_at, vacancy.snippet,
-        COALESCE(vacancy_relation.favorite, 0) AS effective_favorite, vacancy_relation.vacancy_relation_status_id, vacancy.vacancy_id
+        COALESCE(vacancy_relation.favorite, 0) AS effective_favorite, vacancy_relation.vacancy_relation_status_id, vacancy.vacancy_id,
+        vacancy.search_query
         FROM vacancy
         JOIN area ON vacancy.area_id = area.area_id
         JOIN schedule ON vacancy.schedule_id = schedule.schedule_id

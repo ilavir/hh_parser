@@ -58,6 +58,7 @@
                             <th scope="col">График</th>
                             <th scope="col">Зарплата</th>
                             <th scope="col">Работодатель</th>
+                            <th scope="col">Запрос</th>
                             <th scope="col">Избранное</th>
                             <th scope="col">Статус</th>
                             <th scope="col">Обновлено</th>
@@ -87,6 +88,7 @@
                                 <td>
                                     <a href="{{ url_for('employer_detail', hh_id=vacancy[5], db=selected_db, vacancy_hh_id=vacancy[0], page_source=pagination.page) }}">{{ vacancy[6] }}</a>
                                 </td>
+                                <td>{{ vacancy[12] }}</td>
                                 <td class="text-center">
                                     <!-- Favorites checkbox form, AJAX -->
                                     <form class="favoriteForm" action="{{ url_for('update_content' )}}" method="post">
@@ -115,7 +117,7 @@
                                 <td>{{ vacancy[7] }}</td>
                             </tr>
                             <tr>
-                                <td colspan="9" class="table-light">
+                                <td colspan="10" class="table-light">
                                     {% set requirement = vacancy[8]['requirement'] if vacancy[8] else None %}
                                     {% set responsibility = vacancy[8]['responsibility'] if vacancy[8] else None %}
 

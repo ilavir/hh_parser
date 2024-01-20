@@ -118,6 +118,7 @@ def args_employer_func(cursor, args_employer, employer_hh_id):
 def extract_vacancies_and_save(params, api_url, headers, args_description, args_update, args_employer, page=0, new_vacancy=0, updated_vacancy=0):
 
     params['page'] = page
+    search_query = params['text']
     
     # manage KeyboardInterrupt exception
     try:
@@ -213,13 +214,14 @@ def extract_vacancies_and_save(params, api_url, headers, args_description, args_
 
             cursor.execute('''
                 INSERT INTO vacancy (hh_id, archived, employment_id, name, area_id, experience_id, url, alternate_url, salary, schedule_id,
-                            address, type_id, snippet, published_at, employer_id, contacts, professional_roles_id, vacancy_description, vacancy_skills)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            address, type_id, snippet, published_at, employer_id, contacts, professional_roles_id, vacancy_description, vacancy_skills,
+                            search_query)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (vacancy_hh_id, vacancy_archived, vacancy_employment, vacancy_name, vacancy_area, vacancy_experience, vacancy_url, vacancy_alternate_url,
                 json.dumps(vacancy_salary, ensure_ascii=False), vacancy_schedule, json.dumps(vacancy_address, ensure_ascii=False),
                 vacancy_type, json.dumps(vacancy_snippet, ensure_ascii=False), vacancy_published_at, existing_employer_id,
                 json.dumps(vacancy_contacts, ensure_ascii=False), vacancy_professional_roles, json.dumps(vacancy_description, ensure_ascii=False),
-                json.dumps(vacancy_skills, ensure_ascii=False)))
+                json.dumps(vacancy_skills, ensure_ascii=False), search_query))
 
 
             new_vacancy += 1

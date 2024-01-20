@@ -9,7 +9,7 @@ def initialize_database():
 
     # Create a database directory if it does not exist
     if not os.path.exists(database_directory):
-        os.makedirs(database_directory)
+        os.mkdir(database_directory)
 
     # Database name input without extension (.db)
     database_name = input('Enter database name: ')
@@ -84,7 +84,8 @@ def vacancy_table_create(conn, cursor):
             alternate_url TEXT,
             archived BOOLEAN,
             published_at DATETIME,
-            employer_id INTEGER
+            employer_id INTEGER,
+            search_query
         )
     ''')
     conn.commit()
