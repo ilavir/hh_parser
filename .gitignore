@@ -1,4 +1,8 @@
 logs/
+db
+src/
+export/
+old/
 
 # Standard .gitgnore file for Python
 # 
