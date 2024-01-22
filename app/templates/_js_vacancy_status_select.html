@@ -1,0 +1,27 @@
+<!-- Send AJAX data to update_content on vacancy status change -->
+<script>
+    $(document).ready(function() {
+        $('.relationStatusForm').change(function() {
+            // Get the form data
+            var form = $(this);
+            var formData = form.serialize();
+            var timestamp = new Date().getTime();  // Add timestamp
+
+            // Make an AJAX request to the server
+            $.ajax({
+                type: 'POST',
+                url: '{{ url_for("update_content", t=timestamp) }}',
+                data: formData,
+                success: function(response) {
+                    // Handle success, if needed
+                    console.log('Form submitted successfully');
+                },
+                error: function(error) {
+                    // Handle error, if needed
+                    console.error('Error submitting form:', error);
+                }
+            });
+        });
+    });
+</script>
+<!-- / Send AJAX data to update_content on vacancy status change -->

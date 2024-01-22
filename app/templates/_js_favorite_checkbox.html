@@ -1,0 +1,36 @@
+<!-- Send AJAX data to update_content on favorite checkbox trigger -->
+<script>
+    $(document).ready(function() {
+        $('.favoriteForm').change(function() {
+            // Get the form data
+            var form = $(this);
+            var timestamp = new Date().getTime();  // Add timestamp
+
+            // Get the value of the favorite_checkbox
+            var checkboxValue = form.find('input[name="favorite_checkbox"]').prop('checked') ? '1' : '0';
+            // Set the value of the favorite_checkbox field in the form data
+            form.find('input[name="favorite_checkbox"]').val(checkboxValue);
+
+            // Set the checkbox value explicitly in formData
+            var formData = form.serialize();
+            formData += '&favorite=' + checkboxValue;
+            console.log(formData)
+
+            // Make an AJAX request to the server
+            $.ajax({
+                type: 'POST',
+                url: '{{ url_for("update_content", t=timestamp) }}',
+                data: formData,
+                success: function(response) {
+                    // Handle success, if needed
+                    console.log('Form submitted successfully');
+                },
+                error: function(error) {
+                    // Handle error, if needed
+                    console.error('Error submitting form:', error);
+                }
+            });
+        });
+    });
+</script>
+<!-- / Send AJAX data to update_content on favorite checkbox trigger -->
