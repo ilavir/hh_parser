@@ -1,6 +1,5 @@
 logs/
 db
-src/
 export/*.csv
 old/
 
