@@ -1,7 +1,7 @@
 from math import ceil
 from flask import render_template, request
 from app import app
-from functions import (get_database_files, get_employer_by_id, get_vacancies,
+from app.functions import (get_database_files, get_employer_by_id, get_vacancies,
                        get_vacancy_by_id, get_vacancy_relation_status_list,
                        change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                        change_employer_relation_notes)

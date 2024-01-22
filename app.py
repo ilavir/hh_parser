@@ -1,9 +1,4 @@
-from flask import Flask
-
-# generate typical flask application code
-app = Flask(__name__)
-
-import routes
+from app import app
 
 if __name__ == '__main__':
     app.run()
