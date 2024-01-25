@@ -1,7 +1,8 @@
-{% set title = selected_db %}
-
 {% extends "base.html" %}
-
+{% block title %}База вакансий ({{ selected_db }}){% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
 {% block content %}
     <div class="container my-4">
         <div class="row">
@@ -66,8 +67,9 @@
                             {{ 'bg-success bg-opacity-25' if vacancy[10] == 1 }}
                             {{ 'bg-warning bg-opacity-25' if vacancy[10] == 2 }}
                             {{ 'bg-danger bg-opacity-25' if vacancy[10] == 9 }}
-                            {{ 'bg-danger bg-opacity-10' if vacancy[10] == 6 }}
+                            {{ 'bg-danger bg-opacity-10' if vacancy[10] == 6 or vacancy[10] == 5 }}
                             {{ 'bg-secondary bg-opacity-25' if vacancy[10] == 7 }}
+                            {{ 'bg-info bg-opacity-25' if vacancy[10] == 3 }}
                             
                             ">
                                 <td><a href="https://hh.ru/vacancy/{{ vacancy[0] }}" target="_blank">{{ vacancy[0] }}</a></td>
@@ -140,10 +142,9 @@
             </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
+{% endblock %}
+{% block js %}
+    {{ super() }}
     <!-- Change db name on database dropdown select -->
     <script>
         document.getElementById('db').addEventListener('change', function() {
@@ -152,8 +153,6 @@
         });
     </script>
     <!-- / Change db name on database dropdown select -->
-
     {% include '_js_favorite_checkbox.html' %}
     {% include '_js_vacancy_status_select.html' %}
-
 {% endblock %}

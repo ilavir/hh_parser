@@ -1,7 +1,7 @@
-{% set title = employer[2] %}
+{% set employer_name = employer[2] %}
 
 {% extends "base.html" %}
-
+{% block title %}Работодатель: {{ employer_name }}{% endblock %}
 {% block content %}
     <div class="container my-4">
         <div class="row">
@@ -12,7 +12,7 @@
                     {% endif %}
                     <a href="{{ url_for('index', db=selected_db, page=page_source)}}" class="btn btn-primary">К списку</a>
                 </div>
-                <h1>{{ title }}</h1>
+                <h1>{{ employer_name }}</h1>
             </div>
         </div>
     </div>
