@@ -11,10 +11,14 @@ from db_init import initialize_database
 
 def authorization():
     
-    load_dotenv()
+    # load environment variables from .env file, if they are not exist in ENVIRONMENT
+    if not os.getenv('ACCESS_TOKEN') or not os.getenv('REFRESH_TOKEN'):
+        print('No needed ENVIRONMENT variables found, trying to load from .env file')
+        load_dotenv()
 
     access_token = os.getenv('ACCESS_TOKEN')
     refresh_token = os.getenv('REFRESH_TOKEN')
+    print(access_token, refresh_token)
 
     headers = {
         'user-agent': 'api-test',
@@ -24,9 +28,9 @@ def authorization():
     auth = requests.get('https://api.hh.ru/me', headers=headers)
     
     if auth.status_code == 200:
-        print(f"--- Status: {auth.status_code} OK ---")
+        print(f"--- HH.ru API Auth Status: {auth.status_code} OK ---")
     else:
-        print(f"--- ERROR {auth.status_code} ---")
+        print(f"--- HH.ru API Auth Status: {auth.status_code} ERROR ---")
         print(f"Access Token: {access_token}")
         print(f"Refresh Token: {refresh_token}")
         proceed = input('Do you want to proceed without authorization? (Y/n): ')
@@ -40,16 +44,15 @@ def authorization():
     return headers
 
 # return parameters for API function call
-def get_parameters(args_description, args_employer):
+def get_parameters():
     api_url = 'https://api.hh.ru/vacancies'
 
     params = {
         'order_by': 'publication_time',
         'area': 1002,
-        'per_page': 100
+        'per_page': 100,
+        'text': input('Enter search query: ')
     }
-
-    params['text'] = input('Enter search query: ')
 
     while True:
         param_type = input('Enter parameter type ("text" for search query; press "Enter" to skip): ')
@@ -58,9 +61,6 @@ def get_parameters(args_description, args_employer):
         param_value = input('Enter parameter value: ')
         params[param_type] = param_value
     
-    #if args_description == True or args_employer == True:
-    #    params['per_page'] = 10
-
     return params, api_url
 
 # Get argument -d (--description) from script start
@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
     headers = authorization()
     conn, cursor = initialize_database()
-    params, api_url = get_parameters(args.description, args.employer)
+    params, api_url = get_parameters()
     
     extract_vacancies_and_save(params, api_url, headers, args.description, args.update, args.employer)
     cursor.close()

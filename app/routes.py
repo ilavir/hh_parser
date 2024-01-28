@@ -10,8 +10,12 @@ from app.functions import (get_database_files, get_employer_by_id, get_vacancies
 @app.route('/', methods = ['POST', 'GET'])
 def index():
     db_files = get_database_files()
-
     selected_db = request.args.get('db', db_files[0] if db_files else None)
+
+    if not selected_db:
+        return 'No databases found.'
+    elif selected_db not in db_files:
+        return 'No database found.'
         
     page = request.args.get('page', 1, type=int)
     per_page = 20
@@ -28,7 +32,14 @@ def index():
 
 @app.route('/vacancy/<hh_id>', methods = ['POST', 'GET'])
 def vacancy_detail(hh_id):
-    selected_db = request.args.get('db')
+    db_files = get_database_files()
+    selected_db = request.args.get('db', None)
+
+    if not selected_db:
+        return 'No database name specified.'
+    elif selected_db not in db_files:
+        return 'No database found.'
+    
     page_source = request.args.get('page_source', 1)
 
     vacancy_id = request.form.get('vacancy_id', None)
@@ -53,7 +64,14 @@ def vacancy_detail(hh_id):
 
 @app.route('/employer/<hh_id>', methods = ['POST', 'GET'])
 def employer_detail(hh_id):
-    selected_db = request.args.get('db')
+    db_files = get_database_files()
+    selected_db = request.args.get('db', None)
+
+    if not selected_db:
+        return 'No database name specified.'
+    elif selected_db not in db_files:
+        return 'No database found.'
+    
     vacancy_source = request.args.get('vacancy_hh_id', None)
     page_source = request.args.get('page_source', 1)
 

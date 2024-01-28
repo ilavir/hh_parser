@@ -5,9 +5,13 @@ from datetime import datetime
 
 
 def get_database_files():
-    db_path = 'db/'
+    database_directory = 'db'
 
-    return [f for f in os.listdir(db_path) if f.endswith('.db')]
+    # Create a database directory if it does not exist
+    if not os.path.exists(database_directory):
+        os.mkdir(database_directory)
+
+    return [f for f in os.listdir(database_directory) if f.endswith('.db')]
 
 
 def db_connect(selected_db):
