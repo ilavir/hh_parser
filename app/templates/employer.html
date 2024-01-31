@@ -1,4 +1,12 @@
+{% set employer_id = employer[0] %}
+{% set employer_hh_id = employer[1] %}
 {% set employer_name = employer[2] %}
+{% set employer_description = employer[3] %}
+{% set employer_site_url = employer[4] %}
+{% set employer_alternate_url = employer[6] %}
+{% set employer_area_name = employer[12] %}
+{% set employer_type_name = employer[13] %}
+{% set employer_relation_notes = employer[14] %}
 
 {% extends "base.html" %}
 {% block title %}Работодатель: {{ employer_name }}{% endblock %}
@@ -19,11 +27,11 @@
     <div class="container">
         <div class="row mb-3">
             <div class="col">
-                <p><strong>ID:</strong> <a href="{{ employer[6] }}">{{ employer[1] }}</a></p>
-                <p class="mb-0">{{ employer[13] }}</p>
-                <p class="mb-0"><strong>Город:</strong> {{ employer[12] }}</p>
-                {% if employer[4] %}
-                    <p class="mb-0"><strong>Сайт:</strong> <a href="{{ employer[4] }}">{{ employer[4] }}</a></p>
+                <p><strong>ID:</strong> <a href="{{ employer_alternate_url }}">{{ employer_hh_id }}</a></p>
+                <p class="mb-0">{{ employer_type_name }}</p>
+                <p class="mb-0"><strong>Город:</strong> {{ employer_area_name }}</p>
+                {% if employer_site_url %}
+                    <p class="mb-0"><strong>Сайт:</strong> <a href="{{ employer_site_url }}">{{ employer_site_url }}</a></p>
                 {% endif %}
                 {% if industries %}
                     <p class="mb-0"><strong>Сферы деятельности:</strong> {{ industries }}</p>
@@ -36,7 +44,7 @@
                 <div class="container mx-0 px-0">
                     <div class="row">
                         <div class="col">
-                            <pre>{{ employer[14] if employer[14] }}</pre>
+                            <pre>{{ employer_relation_notes if employer_relation_notes }}</pre>
                         </div>
                     </div>
                     <div class="row">
@@ -45,10 +53,10 @@
                                 Редактировать примечания
                             </button></p>
                             <div class="collapse" id="collapseEditNotes">
-                                <form action="{{ url_for('employer_detail', hh_id=employer[1], db=selected_db, vacancy_hh_id=vacancy_source, page_source=page_source) }}" method="post">
-                                    <input type="hidden" name="employer_id" value="{{ employer[0] }}">
+                                <form action="{{ url_for('employer_detail', hh_id=employer_hh_id, db=selected_db, vacancy_hh_id=vacancy_source, page_source=page_source) }}" method="post">
+                                    <input type="hidden" name="employer_id" value="{{ employer_id }}">
 
-                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ employer[14] if employer[14] }}</textarea>
+                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ employer_relation_notes if employer_relation_notes }}</textarea>
                                     <button type="submit" class="btn btn-primary my-2">Сохранить</button>
                                 </form>
                             </div>
@@ -60,7 +68,7 @@
         </div>
         <div class="row mb-5 p-3 text-bg-light">
             <div class="col">
-                {{ employer[3]|safe }}
+                {{ employer_description|safe }}
             </div>
         </div>
     </div>

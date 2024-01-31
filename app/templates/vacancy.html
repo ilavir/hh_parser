@@ -1,11 +1,34 @@
+{% set vacancy_id = vacancy[0] %}
+{% set vacancy_hh_id = vacancy[1] %}
+{% set vacancy_alternate_url = vacancy[3] %}
 {% set vacancy_name = vacancy[4] %}
+{% set vacancy_archived = vacancy[5] %}
+{% set vacancy_published_at = vacancy[6] %}
+{% set vacancy_salary = vacancy[8] %}
+{% set vacancy_experience_name = vacancy[9] %}
+{% set vacancy_schedule_name = vacancy[10] %}
+{% set vacancy_description = vacancy[11] %}
+{% set vacancy_skills = vacancy[12] %}
+{% set vacancy_professional_roles = vacancy[13] %}
+{% set employer_hh_id = vacancy[14] %}
+{% set vacancy_employment_name = vacancy[15] %}
+{% set employer_name = vacancy[16] %}
+{% set employer_alternate_url = vacancy[17] %}
+{% set vacancy_area_name = vacancy[18] %}
+{% set vacancy_address = vacancy[19] %}
+{% set vacancy_contacts = vacancy[20] %}
+{% set vacancy_relation_favorite = vacancy[21] %}
+{% set vacancy_relation_status = vacancy[22] %}
+{% set vacancy_relation_notes = vacancy[23] %}
+{% set vacancy_relation_conversation = vacancy[24] %}
+{% set employer_relation_notes = vacancy[25] %}
 
 {% extends "base.html" %}
 {% block title %}Вакансия: {{ vacancy_name }}{% endblock %}
 {% block content %}
     <div class="container my-4">
         <div class="row">
-            <div class="col text-center {{ 'bg-secondary' if vacancy[5] == 1 }}">
+            <div class="col text-center {{ 'bg-secondary' if vacancy_archived == 1 }}">
                 <div class="float-start mt-2">
                     <a href="{{ url_for('index', db=selected_db, page=page_source)}}" class="btn btn-primary">К списку</a>
                 </div>
@@ -17,20 +40,20 @@
         <div class="row mb-3">
             <div class="col">
                 <p>
-                    <strong>ID:</strong> <a href="{{ vacancy[3] }}" target="_blank">{{ vacancy[1] }}</a> &mdash; {{ vacancy[4] }}
+                    <strong>ID:</strong> <a href="{{ vacancy_alternate_url }}" target="_blank">{{ vacancy_hh_id }}</a> &mdash; {{ vacancy_name }}
                 </p>
             </div>
             <div class="col text-end">
-                <p class="mb-0">{{ vacancy[6] }}</p>
+                <p class="mb-0">{{ vacancy_published_at }}</p>
                 <!-- Status list form -->
                 <form id="vacancyRelationStatus" class="relationStatusForm float-end" action="{{ url_for('update_content') }}" method="post">
                     <input type="hidden" name="db" value="{{ selected_db }}">
-                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
+                    <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
 
                     <select name="relation_status" id="relation_status">
                         <option value="None"></option>
                         {% for status in status_list %}
-                            <option value="{{ status[0] }}" {% if vacancy[22] == status[0] %}selected{% endif %}>{{ status[1] }}</option>
+                            <option value="{{ status[0] }}" {% if vacancy_relation_status == status[0] %}selected{% endif %}>{{ status[1] }}</option>
                         {% endfor %}
                     </select>
                 </form>
@@ -38,9 +61,9 @@
                 <!-- Favorites checkbox form, AJAX -->
                 <form class="favoriteForm form-check float-end me-2" action="{{ url_for('update_content' )}}" method="post">
                     <input type="hidden" name="db" value="{{ selected_db }}">
-                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
+                    <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
 
-                    <input class="form-check-input" type="checkbox" name="favorite_checkbox" id="favoriteCheckbox" value="{{ 1 if vacancy[21] == 1 else 0 }}" {{ 'checked' if vacancy[21] == 1 }}>
+                    <input class="form-check-input" type="checkbox" name="favorite_checkbox" id="favoriteCheckbox" value="{{ 1 if vacancy_relation_favorite == 1 else 0 }}" {{ 'checked' if vacancy_relation_favorite == 1 }}>
                     <label class="form-check-label" for="favoriteCheckbox">В избранное</label>
                 </form>
                 <!-- / Favorites checkbox form, AJAX -->
@@ -48,36 +71,36 @@
         </div>
         <div class="row">
             <div class="col">
-                {% if vacancy[8] %}
+                {% if vacancy_salary %}
                     <p><strong>Зарплата:</strong>
-                    {% set salary_from = vacancy[8]['from'] if vacancy[8] else None %}
-                    {% set salary_to = vacancy[8]['to'] if vacancy[8] else None %}
-                    {% set salary_currency = vacancy[8]['currency'] if vacancy[8] else None %}
-                    {% set salary_gross = 'до вычета налогов' if vacancy[8]['gross'] == True else '' %}
+                    {% set salary_from = vacancy_salary['from'] if vacancy_salary else None %}
+                    {% set salary_to = vacancy_salary['to'] if vacancy_salary else None %}
+                    {% set salary_currency = vacancy_salary['currency'] if vacancy_salary else None %}
+                    {% set salary_gross = 'до вычета налогов' if vacancy_salary['gross'] == True else '' %}
                     
                     {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(salary_currency) if salary_currency else '') + ' {}'.format(salary_gross) }}
                     </p>
                 {% endif %}
-                <p class="mb-0"><strong>Город:</strong> {{ vacancy[18] }}</p>
-                <p class="mb-0"><strong>Опыт работы:</strong> {{ vacancy[9] }}</p>
-                <p class="mb-0"><strong>Занятость:</strong> {{ vacancy[15] }}</p>
-                <p class="mb-0"><strong>График:</strong> {{ vacancy[10] }}</p>
+                <p class="mb-0"><strong>Город:</strong> {{ vacancy_area_name }}</p>
+                <p class="mb-0"><strong>Опыт работы:</strong> {{ vacancy_experience_name }}</p>
+                <p class="mb-0"><strong>Занятость:</strong> {{ vacancy_employment_name }}</p>
+                <p class="mb-0"><strong>График:</strong> {{ vacancy_schedule_name }}</p>
             </div>
             <div class="col-6 text-end">
-                <p><a href="{{ url_for('employer_detail', hh_id=vacancy[14], db=selected_db, vacancy_hh_id=vacancy[1], page_source=page_source) }}">{{ vacancy[16] }}</a> (<a href="{{ vacancy[17] }}" target="_blank">{{ vacancy[14] }}</a>)</p>
-                {% if vacancy[25] %}<p><pre>{{ vacancy[25] }}</pre></p>{% endif %}
-                {% if vacancy[19] %}
-                    {% set address_raw = vacancy[19]['raw'] %}
+                <p><a href="{{ url_for('employer_detail', hh_id=employer_hh_id, db=selected_db, vacancy_hh_id=vacancy_hh_id, page_source=page_source) }}">{{ employer_name }}</a> (<a href="{{ employer_alternate_url }}" target="_blank">{{ employer_hh_id }}</a>)</p>
+                {% if employer_relation_notes %}<p><pre>{{ employer_relation_notes }}</pre></p>{% endif %}
+                {% if vacancy_address %}
+                    {% set address_raw = vacancy_address['raw'] %}
 
                     <p><a href="https://maps.yandex.ru?text={{ address_raw }}" target="_blank">{{ address_raw }}</a></p>
                 {% endif %}
-                {% if vacancy[20] %}
-                    {% set contacts_name = vacancy[20]['name'] %}
-                    {% set contacts_email = vacancy[20]['email'] %}
+                {% if vacancy_contacts %}
+                    {% set contacts_name = vacancy_contacts['name'] %}
+                    {% set contacts_email = vacancy_contacts['email'] %}
 
                     <p class="mb-0">{{ contacts_name }}</p>
                     {% if contacts_email %}<p class="mb-0">{{ '<a href="mailto:{}">{}</a>'.format(contacts_email, contacts_email)|safe }}</p>{% endif %}
-                    <p>{% for phone in vacancy[20]['phones'] %}
+                    <p>{% for phone in vacancy_contacts['phones'] %}
                             +{{ phone['country'] }} {{ phone['city'] }} {{ phone['number'] }}{% if not loop.last %}, {% endif %}
                         {% endfor %}</p>
                 {% endif %}
@@ -85,10 +108,10 @@
         </div>
         <div class="row my-3">
             <div class="col">
-                <p class="mb-0"><strong>Должность:</strong> {{ vacancy[13] }}</p>
-                {% if vacancy[12] %}
+                <p class="mb-0"><strong>Должность:</strong> {{ vacancy_professional_roles }}</p>
+                {% if vacancy_skills %}
                     <p><strong>Навыки:</strong>
-                        {% for skill in vacancy[12] %}
+                        {% for skill in vacancy_skills %}
                             {{ skill['name'] }}{% if not loop.last %}, {% endif %}
                         {% endfor %}
                     </p>
@@ -101,7 +124,7 @@
                 <div class="container mx-0 px-0">
                     <div class="row">
                         <div class="col">
-                            <pre>{{ vacancy[23] if vacancy[23] }}</pre>
+                            <pre>{{ vacancy_relation_notes if vacancy_relation_notes }}</pre>
                         </div>
                     </div>
                     <div class="row">
@@ -113,19 +136,19 @@
                                 Показать переписку
                             </button></p>
                             <div class="collapse" id="collapseEditNotes">
-                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page_source=page_source) }}" method="post">
-                                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
+                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy_hh_id, page_source=page_source) }}" method="post">
+                                    <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
 
-                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ vacancy[23] if vacancy[23] }}</textarea>
+                                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" name="notes_content">{{ vacancy_relation_notes if vacancy_relation_notes }}</textarea>
                                     <button type="submit" class="btn btn-primary my-2">Сохранить</button>
                                 </form>
                             </div>
                             <div class="collapse" id="collapseEditCoversation">
 
-                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy[1], page_source=page_source) }}" method="post">
-                                    <input type="hidden" name="vacancy_id" value="{{ vacancy[0] }}">
-                                    <pre>{{ vacancy[24] if vacancy[24] }}</pre>
-                                    <textarea class="form-control" id="exampleFormControlTextarea2" rows="10" name="conversation_content">{{ vacancy[24] if vacancy[24] }}</textarea>
+                                <form action="{{ url_for('vacancy_detail', db=selected_db, hh_id=vacancy_hh_id, page_source=page_source) }}" method="post">
+                                    <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
+                                    <pre>{{ vacancy_relation_conversation if vacancy_relation_conversation }}</pre>
+                                    <textarea class="form-control" id="exampleFormControlTextarea2" rows="10" name="conversation_content">{{ vacancy_relation_conversation if vacancy_relation_conversation }}</textarea>
                                     <button type="submit" class="btn btn-primary my-2">Сохранить</button>
                                 </form>
                             </div>
@@ -137,7 +160,7 @@
         </div>
         <div class="row mb-5 p-3 text-bg-light">
             <div class="col">
-                {{ vacancy[11][1:-1]|safe }}
+                {{ vacancy_description[1:-1]|safe }}
             </div>
         </div>
 

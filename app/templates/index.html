@@ -63,37 +63,53 @@
                     </thead>
                     <tbody>
                         {% for vacancy in vacancies %}
+
+                        {% set vacancy_hh_id = vacancy[0] %}
+                        {% set vacancy_name = vacancy[1] %}
+                        {% set vacancy_area_name = vacancy[2] %}
+                        {% set vacancy_schedule_name = vacancy[3] %}
+                        {% set vacancy_salary = vacancy[4] %}
+                        {% set employer_hh_id = vacancy[5] %}
+                        {% set employer_name = vacancy[6] %}
+                        {% set vacancy_published_at = vacancy[7] %}
+                        {% set vacancy_snippet = vacancy[8] %}
+                        {% set vacancy_relation_favorite = vacancy[9] %}
+                        {% set vacancy_relation_status_id = vacancy[10] %}
+                        {% set vacancy_id = vacancy[11] %}
+                        {% set vacancy_search_query = vacancy[12] %}
+                        
+
                             <tr class="pt-4 table-group-divider
-                            {{ 'bg-success bg-opacity-25' if vacancy[10] == 1 }}
-                            {{ 'bg-warning bg-opacity-25' if vacancy[10] == 2 }}
-                            {{ 'bg-danger bg-opacity-25' if vacancy[10] == 9 }}
-                            {{ 'bg-danger bg-opacity-10' if vacancy[10] == 6 or vacancy[10] == 5 }}
-                            {{ 'bg-secondary bg-opacity-25' if vacancy[10] == 7 }}
-                            {{ 'bg-info bg-opacity-25' if vacancy[10] == 3 }}
+                            {{ 'bg-success bg-opacity-25' if vacancy_relation_status_id == 1 }}
+                            {{ 'bg-warning bg-opacity-25' if vacancy_relation_status_id == 2 }}
+                            {{ 'bg-danger bg-opacity-25' if vacancy_relation_status_id == 9 }}
+                            {{ 'bg-danger bg-opacity-10' if vacancy_relation_status_id == 6 or vacancy_relation_status_id == 5 }}
+                            {{ 'bg-secondary bg-opacity-25' if vacancy_relation_status_id == 7 }}
+                            {{ 'bg-info bg-opacity-25' if vacancy_relation_status_id == 3 }}
                             
                             ">
-                                <td><a href="https://hh.ru/vacancy/{{ vacancy[0] }}" target="_blank">{{ vacancy[0] }}</a></td>
-                                <td><a href="{{ url_for('vacancy_detail', hh_id=vacancy[0], db=selected_db, page_source=pagination.page) }}">{{ vacancy[1] }}</a></td>
-                                <td>{{ vacancy[2] }}</td>
-                                <td>{{ vacancy[3] }}</td>
+                                <td><a href="https://hh.ru/vacancy/{{ vacancy_hh_id }}" target="_blank">{{ vacancy_hh_id }}</a></td>
+                                <td><a href="{{ url_for('vacancy_detail', hh_id=vacancy_hh_id, db=selected_db, page_source=pagination.page) }}">{{ vacancy_name }}</a></td>
+                                <td>{{ vacancy_area_name }}</td>
+                                <td>{{ vacancy_schedule_name }}</td>
                                 <td>
-                                    {% set salary_from = vacancy[4]['from'] if vacancy[4] else None %}
-                                    {% set salary_to = vacancy[4]['to'] if vacancy[4] else None %}
-                                    {% set currency = vacancy[4]['currency'] if vacancy[4] else None %}
+                                    {% set salary_from = vacancy_salary['from'] if vacancy_salary else None %}
+                                    {% set salary_to = vacancy_salary['to'] if vacancy_salary else None %}
+                                    {% set currency = vacancy_salary['currency'] if vacancy_salary else None %}
                                     
-                                    {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy[4] else '---' }}
+                                    {{ ('от {}'.format(salary_from) if salary_from else '') + (' до {}'.format(salary_to) if salary_to else '') + (' {}'.format(currency) if currency else '') if vacancy_salary else '---' }}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('employer_detail', hh_id=vacancy[5], db=selected_db, vacancy_hh_id=vacancy[0], page_source=pagination.page) }}">{{ vacancy[6] }}</a>
+                                    <a href="{{ url_for('employer_detail', hh_id=employer_hh_id, db=selected_db, vacancy_hh_id=vacancy_hh_id, page_source=pagination.page) }}">{{ employer_name }}</a>
                                 </td>
-                                <td>{{ vacancy[12] }}</td>
+                                <td>{{ vacancy_search_query }}</td>
                                 <td class="text-center">
                                     <!-- Favorites checkbox form, AJAX -->
                                     <form class="favoriteForm" action="{{ url_for('update_content' )}}" method="post">
                                         <input type="hidden" name="db" value="{{ selected_db }}">
-                                        <input type="hidden" name="vacancy_id" value="{{ vacancy[11] }}">
+                                        <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
 
-                                        <input class="form-check-input" type="checkbox" name="favorite_checkbox" value="{{ 1 if vacancy[9] == 1 else 0 }}" {{ 'checked' if vacancy[9] == 1 }}>
+                                        <input class="form-check-input" type="checkbox" name="favorite_checkbox" value="{{ 1 if vacancy_relation_favorite == 1 else 0 }}" {{ 'checked' if vacancy_relation_favorite == 1 }}>
                                     </form>
                                     <!-- / Favorites checkbox form, AJAX -->
                                 </td>
@@ -101,26 +117,26 @@
                                     <!-- Status list form, AJAX -->
                                     <form class="relationStatusForm" action="{{ url_for('update_content') }}" method="post">
                                         <input type="hidden" name="db" value="{{ selected_db }}">
-                                        <input type="hidden" name="vacancy_id" value="{{ vacancy[11] }}">
+                                        <input type="hidden" name="vacancy_id" value="{{ vacancy_id }}">
                     
                                         <select name="relation_status" id="relation_status">
                                             <option value="None"></option>
                                             {% for status in status_list %}
-                                                <option value="{{ status[0] }}" {% if vacancy[10] == status[0] %}selected{% endif %}>{{ status[1] }}</option>
+                                                <option value="{{ status[0] }}" {% if vacancy_relation_status_id == status[0] %}selected{% endif %}>{{ status[1] }}</option>
                                             {% endfor %}
                                         </select>
                                     </form>
                                     <!-- / Status list form, AJAX -->
                                 </td>
-                                <td>{{ vacancy[7] }}</td>
+                                <td>{{ vacancy_published_at }}</td>
                             </tr>
                             <tr>
                                 <td colspan="10" class="table-light">
-                                    {% set requirement = vacancy[8]['requirement'] if vacancy[8] else None %}
-                                    {% set responsibility = vacancy[8]['responsibility'] if vacancy[8] else None %}
+                                    {% set snippet_requirement = vacancy_snippet['requirement'] if vacancy_snippet else None %}
+                                    {% set snippet_responsibility = vacancy_snippet['responsibility'] if vacancy_snippet else None %}
 
-                                    <strong>Обязанности</strong>: {{ responsibility.replace('<highlighttext>', '').replace('</highlighttext>', '') if responsibility else None }}<br><br>
-                                    <strong>Требования</strong>: {{ requirement.replace('<highlighttext>', '').replace('</highlighttext>', '') if requirement else None }}
+                                    <strong>Обязанности</strong>: {{ snippet_responsibility.replace('<highlighttext>', '').replace('</highlighttext>', '') if snippet_responsibility else None }}<br><br>
+                                    <strong>Требования</strong>: {{ snippet_requirement.replace('<highlighttext>', '').replace('</highlighttext>', '') if snippet_requirement else None }}
                                 </td>
                             </tr>
                         {% endfor %}
