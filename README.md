@@ -6,7 +6,7 @@ Uses: Python 3.11, Flask, SQLite, Docker, [HeadHunter API](https://dev.hh.ru/).
 
 ## Installation
 
-### Local linux machine with Python 3.11 and Git
+### Local Linux machine with Python 3.11 and Git
 
 - install Git (<https://git-scm.com/downloads>)
 - clone GitHub repository
