@@ -13,7 +13,7 @@ services:
   web:
     build:
       context: .
-    image: ilavir/hh-parser
+    image: ilavir/hh-parser:1
     stop_signal: SIGINT
     ports:
       - 8000:8000
