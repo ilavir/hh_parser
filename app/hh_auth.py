@@ -3,16 +3,63 @@
 import requests
 import json
 import os
+import sqlite3
 from dotenv import load_dotenv, find_dotenv, set_key
 
-load_dotenv()
+
+def db_connect(selected_db):
+    conn = sqlite3.connect(f'db/{selected_db}')
+    cursor = conn.cursor()
+
+    return conn, cursor
+
+
+def get_tokens_from_db(user_id):
+    conn, cursor = db_connect('test.db')
+    query = 'SELECT access_token, refresh_token FROM user WHERE user_id = ?'
+    cursor.execute(query, (user_id,))
+    result = cursor.fetchone()
+
+    access_token = result[0]
+    refresh_token = result[1]
+
+    conn.close()
+
+    return access_token, refresh_token
+
+
+def check_hh_auth(user_id):
+    auth_status = False
+    access_token, refresh_token = get_tokens_from_db(user_id)
+
+    if access_token and refresh_token:
+        print(f"Access Token: {access_token}")
+        print(f"Refresh Token: {refresh_token}")
+
+        headers = {
+            'user-agent': 'api-test',
+            'authorization': 'Bearer ' + access_token,
+        }
+
+        auth = requests.get('https://api.hh.ru/me', headers=headers)
+        
+        if auth.status_code == 200:
+            print(f"--- HH.ru API OAuth Status: {auth.status_code} OK ---")
+            auth_status = True
+        else:
+            print(f"--- HH.ru API OAuth Status: {auth.status_code} ERROR ---")
+    
+    else:
+        print('ERROR: No Access and Refresh Tokens found.')
+    
+    return auth_status, access_token, refresh_token
 
 def get_tokens():
 
     # Replace with your HeadHunter API credentials
     client_id = os.getenv('CLIENT_ID')
     client_secret = os.getenv('CLIENT_SECRET')
-    redirect_uri = 'http://localhost/auth'  # If you've specified it during app registration
+    redirect_uri = 'http://localhost:5000/auth'  # If you've specified it during app registration
     state = 'your_state'  # Optional, used to prevent CSRF attacks
 
     # Step 1: Obtain authorization code
@@ -65,6 +112,11 @@ def get_tokens():
     
     return access_token, refresh_token
 
+
+def save_token_to_db(user_id, access_token, refresh_token):
+
+    return
+
 def save_tokens_to_file(access_token, refresh_token, filename='tokens.json'):
 
     '''tokens = {'access_token': access_token, 'refresh_token': refresh_token}
@@ -76,11 +128,16 @@ def save_tokens_to_file(access_token, refresh_token, filename='tokens.json'):
     # Set or update a key-value pair in the .env file
     set_key(dotenv_path, "ACCESS_TOKEN", access_token)
     set_key(dotenv_path, "REFRESH_TOKEN", refresh_token)
-    print(f'Tokens saved to .env')
 
-access_token, refresh_token = get_tokens()
+    return f'Tokens saved to .env'
 
-if access_token and refresh_token:
-    save_tokens_to_file(access_token, refresh_token)
-else:
-    print("Tokens not available. Check for errors.")
+
+if __name__ == '__main__':
+    #access_token, refresh_token = get_tokens()
+
+    #if access_token and refresh_token:
+    #    save_tokens_to_file(access_token, refresh_token)
+    #else:
+    #    print("Tokens not available. Check for errors.")
+
+    print(check_hh_auth())

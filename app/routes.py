@@ -5,6 +5,7 @@ from app.functions import (get_database_files, get_employer_by_id, get_vacancies
                        get_vacancy_by_id, get_vacancy_relation_status_list,
                        change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                        change_employer_relation_notes)
+from app.hh_auth import check_hh_auth
 
 
 @app.route('/', methods = ['POST', 'GET'])
@@ -103,3 +104,11 @@ def update_content():
         change_vacancy_relation_status(selected_db, vacancy_id, relation_status)
 
     return 'Good'
+
+@app.route('/profile', methods = ['GET', 'POST'])
+def profile():
+    user_id = 1
+    hh_authorized, access_token, refresh_token = check_hh_auth(user_id)
+    hh_authorization = {'hh_authorized': hh_authorized, 'access_token': access_token, 'refresh_token': refresh_token}
+
+    return render_template('profile.html', hh_authorization=hh_authorization)
