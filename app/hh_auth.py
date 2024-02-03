@@ -82,7 +82,8 @@ def get_hh_tokens(authorization_code):
     # Replace with your HeadHunter API credentials
     client_id = app.config['HH_CLIENT_ID']
     client_secret = app.config['HH_CLIENT_SECRET']
-    hh_redirect_uri = 'http://localhost:5000/hh_auth'  # If you've specified it during app registration
+    self_uri = app.config['SELF_URI']
+    hh_redirect_uri = urljoin(self_uri, 'hh_auth')  # If you've specified it during app registration
 
     # Step 2: Exchange authorization code for access token
     token_url = 'https://hh.ru/oauth/token'

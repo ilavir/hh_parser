@@ -239,6 +239,9 @@ def hh_auth():
         user.refresh_token = refresh_token
         db.session.commit()
 
+        user.check_hh_auth()
+        session['hh_auth'] = user.hh_auth
+
         return redirect(url_for('user', username=current_user.username))
     
     if action == 'check_status':
