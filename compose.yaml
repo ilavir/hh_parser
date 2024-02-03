@@ -16,11 +16,11 @@ services:
     image: ilavir/hh-parser:1
     stop_signal: SIGINT
     ports:
-      - 8000:8000
+      - ${SELF_URI_PORT}:8000
     env_file:
       - .env
     volumes:
-      - sqlite:/app/db
+      - sqlite:${DB_PATH}
 
 volumes:
   sqlite:
