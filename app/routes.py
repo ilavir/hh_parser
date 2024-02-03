@@ -1,5 +1,6 @@
 from math import ceil
-from flask import render_template, request, flash, redirect, url_for
+from datetime import datetime, timezone
+from flask import render_template, request, flash, redirect, url_for, session
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
@@ -9,11 +10,17 @@ from app.functions import (get_database_files, get_employer_by_id, get_vacancies
                            get_vacancy_by_id, get_vacancy_relation_status_list,
                            change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                            change_employer_relation_notes)
-from app.hh_auth import check_hh_auth
-from app.forms import LoginForm, RegistrationForm
+from app.hh_auth import get_hh_authorization_code, get_hh_tokens, refresh_hh_tokens
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, HhAuthForm
 from app.models import User
 
-import os
+
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc)
+        db.session.commit()
+
 
 @app.route('/', methods=['POST', 'GET'])
 @login_required
@@ -118,16 +125,6 @@ def update_content():
     return 'Good'
 
 
-@app.route('/profile', methods=['GET', 'POST'])
-def profile():
-    user_id = 1
-    hh_authorized, access_token, refresh_token = check_hh_auth(user_id)
-    hh_authorization = {'hh_authorized': hh_authorized,
-                        'access_token': access_token, 'refresh_token': refresh_token}
-
-    return render_template('profile.html', hh_authorization=hh_authorization)
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -145,11 +142,13 @@ def login():
         
         login_user(user, remember=form.remember_me.data)
         flash(f'User {user.username} successfuly logged in.')
+        user.check_hh_auth()
+        session['hh_auth'] = user.hh_auth
 
         next_page = request.args.get('next')
 
         if not next_page or urlsplit(next_page).netloc != '':
-            next_page = url_for('user', username=user.username)
+            next_page = url_for('user', username=current_user.username)
 
         return redirect(next_page)
 
@@ -158,9 +157,10 @@ def login():
 
 @app.route('/logout')
 def logout():
+    session.pop('hh_auth', None)
     logout_user()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -187,9 +187,84 @@ def register():
 @login_required
 def user(username):
     user = db.first_or_404(sa.select(User).where(User.username == username))
-    tokens = {
-        'access_token': 'sdfsd6776sdf',
-        'refresh_token': 'efg443dssd7k'
-    }
+    
+    form = HhAuthForm()
 
-    return render_template('user.html', user=user, tokens=tokens)
+    try:
+        hh_auth = session['hh_auth']
+    except:
+        hh_auth = False
+
+    return render_template('profile.html', user=user, hh_auth=hh_auth, form=form)
+
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm(current_user.username)
+
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.about_me = form.about_me.data
+        db.session.commit()
+        flash('Your changes have been saved.')
+
+        return redirect(url_for('edit_profile'))
+    
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.about_me.data = current_user.about_me
+
+    return render_template('edit_profile.html', form=form)
+
+
+@app.route('/hh_auth', methods=['GET'])
+def hh_auth():
+    action = request.args.get('action', None)
+    error = request.args.get('error', None)
+    authorization_code = request.args.get('code', None)
+
+    user = db.session.scalar(sa.select(User).where(User.id == current_user.id))
+
+    if error:
+        flash(f'ERROR! Failed to obtain tokens. Tokens are not updated. Error message: {error}')
+        app.logger.error(f'Failed to obtain tokens. Tokens are not updated. Error message: {error}')
+
+        return redirect(url_for('user', username=current_user.username))
+
+    if authorization_code:
+        access_token, refresh_token = get_hh_tokens(authorization_code)
+
+        user.access_token = access_token
+        user.refresh_token = refresh_token
+        db.session.commit()
+
+        return redirect(url_for('user', username=current_user.username))
+    
+    if action == 'check_status':
+        
+        user.check_hh_auth()
+        session['hh_auth'] = user.hh_auth
+
+        return redirect(url_for('user', username=current_user.username))
+    
+    elif action == 'refresh_tokens':
+        current_refresh_token = user.refresh_token
+        access_token, refresh_token = refresh_hh_tokens(current_refresh_token)
+
+        if access_token and refresh_token:
+            user.access_token = access_token
+            user.refresh_token = refresh_token
+            db.session.commit()
+        else:
+            flash(f'ERROR! Failed to obtain tokens. Tokens are not updated.')
+            app.logger.error(f'Failed to obtain tokens. Tokens are not updated.')
+
+        return redirect(url_for('user', username=current_user.username))
+
+    elif action == 'get_tokens':
+        oauth_url = get_hh_authorization_code()
+        
+        return redirect(oauth_url)
+    
+    return 'No action'

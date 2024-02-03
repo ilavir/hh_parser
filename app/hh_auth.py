@@ -1,65 +1,65 @@
-#!/usr/bin/env python3
-
 import requests
-import json
-import os
-import sqlite3
-from dotenv import load_dotenv, find_dotenv, set_key
+from flask import flash
+from urllib.parse import urlencode, urljoin
+from app import app
 
 
-def db_connect(selected_db):
-    conn = sqlite3.connect(f'db/{selected_db}')
-    cursor = conn.cursor()
-
-    return conn, cursor
-
-
-def get_tokens_from_db(user_id):
-    conn, cursor = db_connect('test.db')
-    query = 'SELECT access_token, refresh_token FROM user WHERE user_id = ?'
-    cursor.execute(query, (user_id,))
-    result = cursor.fetchone()
-
-    access_token = result[0]
-    refresh_token = result[1]
-
-    conn.close()
-
-    return access_token, refresh_token
-
-
-def check_hh_auth(user_id):
-    auth_status = False
-    access_token, refresh_token = get_tokens_from_db(user_id)
-
-    if access_token and refresh_token:
-        print(f"Access Token: {access_token}")
-        print(f"Refresh Token: {refresh_token}")
-
+def check_hh_authorization(access_token):
+    app.logger.info('Checking HH.ru OAuth Status...')
+    
+    if access_token:
         headers = {
             'user-agent': 'api-test',
             'authorization': 'Bearer ' + access_token,
         }
 
-        auth = requests.get('https://api.hh.ru/me', headers=headers)
-        
-        if auth.status_code == 200:
-            print(f"--- HH.ru API OAuth Status: {auth.status_code} OK ---")
-            auth_status = True
-        else:
-            print(f"--- HH.ru API OAuth Status: {auth.status_code} ERROR ---")
-    
-    else:
-        print('ERROR: No Access and Refresh Tokens found.')
-    
-    return auth_status, access_token, refresh_token
+        response = requests.get('https://api.hh.ru/me', headers=headers)
 
-def get_tokens():
+        if response.status_code == 200:
+            app.logger.info(f"--- HH.ru API OAuth Status: {response.status_code} OK ---")
+            return True
+        else:
+            app.logger.warning(f"--- HH.ru API OAuth Status: {response.status_code} ERROR ---")
+            app.logger.warning(response.text)
+            flash('You are not authorized in HH.ru API. Please, try to refresh or update tokens from your profile.')
+    else:
+        app.logger.warning('No ACCESS_TOKEN found.')
+        flash('No Access Token found. Please, get new tokens from your profile.')
+        
+    return False
+
+
+def refresh_hh_tokens(current_refresh_token):
+    app.logger.info('Making a refresh tokens request to HH.ru API...')
+    
+    # Step 2: Exchange authorization code for access token
+    token_url = 'https://hh.ru/oauth/token'
+    token_data = {
+        'grant_type': 'refresh_token',
+        'refresh_token': current_refresh_token
+    }
+    token_response = requests.post(token_url, data=token_data)
+
+    if token_response.status_code == 200:
+        access_token = token_response.json().get('access_token')
+        refresh_token = token_response.json().get('refresh_token')
+        app.logger.info(f'Access Token: {access_token}')
+        app.logger.info(f'Refresh Token: {refresh_token}')
+    else:
+        app.logger.warning(f'Failed to obtain tokens. Status code: {token_response.status_code}')
+        app.logger.warning(token_response.text)
+        access_token = None
+        refresh_token = None
+
+    return access_token, refresh_token
+
+def get_hh_authorization_code():
+    app.logger.info('Making a request to HH.ru API for authorization code...')
 
     # Replace with your HeadHunter API credentials
-    client_id = os.getenv('CLIENT_ID')
-    client_secret = os.getenv('CLIENT_SECRET')
-    redirect_uri = 'http://localhost:5000/auth'  # If you've specified it during app registration
+    client_id = app.config['HH_CLIENT_ID']
+    self_uri = app.config['SELF_URI']
+    hh_redirect_uri = urljoin(self_uri, 'hh_auth')  # If you've specified it during app registration
     state = 'your_state'  # Optional, used to prevent CSRF attacks
 
     # Step 1: Obtain authorization code
@@ -67,26 +67,22 @@ def get_tokens():
     authorization_params = {
         'response_type': 'code',
         'client_id': client_id,
-        'redirect_uri': redirect_uri,
+        'redirect_uri': hh_redirect_uri,
         'state': state  # Optional
     }
 
-    #authorization_response = requests.get(authorization_url, params=authorization_params)
-    print('Open next URL in browser and input Authorization Code below:')
-    print(authorization_url + "?response_type=" + authorization_params['response_type'] + "&client_id=" + authorization_params['client_id'])
+    endpoint_url = urljoin(authorization_url, '?' + urlencode(authorization_params))
 
-    # Open next link in web-browser to get Access Token and Refresh Token:
-    '''
-      https://hh.ru/oauth/authorize?
-      response_type=code&
-      client_id={client_id}&
-      state={state}&
-      redirect_uri={redirect_uri}
-    '''
+    return endpoint_url
 
-    # After opening this URL in a web browser, the user will be redirected to your redirect_uri with the code as a query parameter.
-    # Extract the code from the redirected URL, e.g., 'http://your_redirect_uri?code=authorization_code'
-    authorization_code = input("Enter the authorization code from the redirected URL: ")
+
+def get_hh_tokens(authorization_code):
+    app.logger.info('Getting tokens from HH.ru API...')
+
+    # Replace with your HeadHunter API credentials
+    client_id = app.config['HH_CLIENT_ID']
+    client_secret = app.config['HH_CLIENT_SECRET']
+    hh_redirect_uri = 'http://localhost:5000/hh_auth'  # If you've specified it during app registration
 
     # Step 2: Exchange authorization code for access token
     token_url = 'https://hh.ru/oauth/token'
@@ -94,7 +90,7 @@ def get_tokens():
         'grant_type': 'authorization_code',
         'client_id': client_id,
         'client_secret': client_secret,
-        'redirect_uri': redirect_uri,
+        'redirect_uri': hh_redirect_uri,
         'code': authorization_code
     }
 
@@ -103,41 +99,12 @@ def get_tokens():
     if token_response.status_code == 200:
         access_token = token_response.json().get('access_token')
         refresh_token = token_response.json().get('refresh_token')
-        print(f'Access Token: {access_token}')
-        print(f'Refresh Token: {refresh_token}')
+        app.logger.info(f'Access Token: {access_token}')
+        app.logger.info(f'Refresh Token: {refresh_token}')
     else:
-        print(f'Failed to obtain access token. Status code: {token_response.status_code}')
-        print(token_response.text)
-        exit()
+        app.logger.warning(f'Failed to obtain tokens. Status code: {token_response.status_code}')
+        app.logger.warning(token_response.text)
+        access_token = None
+        refresh_token = None
     
     return access_token, refresh_token
-
-
-def save_token_to_db(user_id, access_token, refresh_token):
-
-    return
-
-def save_tokens_to_file(access_token, refresh_token, filename='tokens.json'):
-
-    '''tokens = {'access_token': access_token, 'refresh_token': refresh_token}
-    with open(filename, 'w') as file:
-        json.dump(tokens, file)'''
-    # Find the .env file in the current directory
-    dotenv_path = find_dotenv()
-
-    # Set or update a key-value pair in the .env file
-    set_key(dotenv_path, "ACCESS_TOKEN", access_token)
-    set_key(dotenv_path, "REFRESH_TOKEN", refresh_token)
-
-    return f'Tokens saved to .env'
-
-
-if __name__ == '__main__':
-    #access_token, refresh_token = get_tokens()
-
-    #if access_token and refresh_token:
-    #    save_tokens_to_file(access_token, refresh_token)
-    #else:
-    #    print("Tokens not available. Check for errors.")
-
-    print(check_hh_auth())

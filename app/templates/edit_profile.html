@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Редактировать профиль{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style>
+        .invalid-feedback {
+            display: block;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h4 class="text-center">Редактировать профиль</h4>
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.username.label(class="form-label") }}
+                        {{ form.username(size=32, class="form-control") }}
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.about_me.label(class="form-label") }}
+                        {{ form.about_me(cols=50, rows=4, class="form-control") }}
+                        {% for error in form.about_me.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center">{{ form.submit(class="btn btn-primary") }}</div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

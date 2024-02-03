@@ -5,7 +5,6 @@ import json
 import argparse
 import os
 from dotenv import load_dotenv
-from app.hh_auth import check_hh_authorization
 from db_init import initialize_database
 
 #from authorization import get_token
@@ -265,7 +264,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--update', action='store_true', help='update existing vacancies')
     args = parser.parse_args()
 
-    authorized, headers = check_hh_authorization()
+    headers = authorization()
     conn, cursor = initialize_database()
     params, api_url = get_parameters()
     
