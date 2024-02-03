@@ -29,7 +29,7 @@
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    <div class="text-center">{{ form.submit(class="btn btn-primary") }}</div>
+                    <div class="text-center">{{ form.submit(class="btn btn-primary") }} <a href="{{ url_for('user', username=current_user.username) }}" class="btn btn-primary">Cancel</a></div>
                 </form>
             </div>
         </div>

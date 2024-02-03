@@ -209,7 +209,7 @@ def edit_profile():
         db.session.commit()
         flash('Your changes have been saved.')
 
-        return redirect(url_for('edit_profile'))
+        return redirect(url_for('user', username=current_user.username))
     
     elif request.method == 'GET':
         form.username.data = current_user.username
@@ -235,12 +235,15 @@ def hh_auth():
     if authorization_code:
         access_token, refresh_token = get_hh_tokens(authorization_code)
 
-        user.access_token = access_token
-        user.refresh_token = refresh_token
-        db.session.commit()
+        if access_token and refresh_token:
+            user.access_token = access_token
+            user.refresh_token = refresh_token
+            db.session.commit()
 
-        user.check_hh_auth()
-        session['hh_auth'] = user.hh_auth
+            user.check_hh_auth()
+            session['hh_auth'] = user.hh_auth
+        else:
+            flash('ERROR! Failed to obtain tokens. Tokens are not updated.')
 
         return redirect(url_for('user', username=current_user.username))
     
@@ -270,4 +273,4 @@ def hh_auth():
         
         return redirect(oauth_url)
     
-    return 'No action'
+    return redirect(url_for('user', username=current_user.username))
