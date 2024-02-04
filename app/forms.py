@@ -47,9 +47,3 @@ class EditProfileForm(FlaskForm):
 
             if user is not None:
                 raise ValidationError('Please use a different username.')
-            
-
-class HhAuthForm(FlaskForm):
-    check_status = SubmitField('Check HH Auth')
-    refresh_tokens = SubmitField('Refresh Tokens')
-    get_tokens = SubmitField('Get New Tokens')

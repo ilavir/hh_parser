@@ -11,7 +11,7 @@ from app.functions import (get_database_files, get_employer_by_id, get_vacancies
                            change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                            change_employer_relation_notes)
 from app.hh_auth import get_hh_authorization_code, get_hh_tokens, refresh_hh_tokens
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, HhAuthForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from app.models import User
 
 
@@ -188,14 +188,12 @@ def register():
 def user(username):
     user = db.first_or_404(sa.select(User).where(User.username == username))
     
-    form = HhAuthForm()
-
     try:
         hh_auth = session['hh_auth']
     except:
         hh_auth = False
 
-    return render_template('profile.html', user=user, hh_auth=hh_auth, form=form)
+    return render_template('profile.html', user=user, hh_auth=hh_auth)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
