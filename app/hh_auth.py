@@ -58,7 +58,7 @@ def get_hh_authorization_code():
 
     # Replace with your HeadHunter API credentials
     client_id = app.config['HH_CLIENT_ID']
-    self_uri = app.config['SELF_URI']
+    self_uri = app.config['SELF_URL']
     hh_redirect_uri = urljoin(self_uri, 'hh_auth')  # If you've specified it during app registration
     state = 'your_state'  # Optional, used to prevent CSRF attacks
 
@@ -82,7 +82,7 @@ def get_hh_tokens(authorization_code):
     # Replace with your HeadHunter API credentials
     client_id = app.config['HH_CLIENT_ID']
     client_secret = app.config['HH_CLIENT_SECRET']
-    self_uri = app.config['SELF_URI']
+    self_uri = app.config['SELF_URL']
     hh_redirect_uri = urljoin(self_uri, 'hh_auth')  # If you've specified it during app registration
 
     # Step 2: Exchange authorization code for access token

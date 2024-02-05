@@ -217,6 +217,7 @@ def edit_profile():
 
 
 @app.route('/hh_auth', methods=['GET'])
+@login_required
 def hh_auth():
     action = request.args.get('action', None)
     error = request.args.get('error', None)
@@ -226,7 +227,7 @@ def hh_auth():
 
     if error:
         flash(f'ERROR! Failed to obtain tokens. Tokens are not updated. Error message: {error}')
-        app.logger.error(f'Failed to obtain tokens. Tokens are not updated. Error message: {error}')
+        app.logger.warning(f'Failed to obtain tokens. Tokens are not updated. Error message: {error}')
 
         return redirect(url_for('user', username=current_user.username))
 
@@ -237,9 +238,12 @@ def hh_auth():
             user.access_token = access_token
             user.refresh_token = refresh_token
             db.session.commit()
+            app.logger.info('SUCCESS! New tokens are obtained and updated.')
+            flash('SUCCESS! New tokens are obtained and updated.')
 
             user.check_hh_auth()
             session['hh_auth'] = user.hh_auth
+
         else:
             flash('ERROR! Failed to obtain tokens. Tokens are not updated.')
 
