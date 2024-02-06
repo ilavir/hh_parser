@@ -12,3 +12,4 @@ class Config:
     SELF_URL_HOST = os.environ.get('SELF_URL_HOST')
     SELF_URL_PORT = os.environ.get('SELF_URL_PORT')
     SELF_URL = SELF_URL_SCHEME + '://' + SELF_URL_HOST + ':' + SELF_URL_PORT
+    #ITEMS_PER_PAGE = 10

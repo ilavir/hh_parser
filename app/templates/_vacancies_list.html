@@ -1,0 +1,47 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">HH ID</th>
+            <th scope="col">Вакансия</th>
+            <th scope="col">Город</th>
+            <th scope="col">График</th>
+            <th scope="col">Зарплата</th>
+            <th scope="col">Работодатель</th>
+            <th scope="col">Обновлено</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vacancy in vacancies['items'] %}
+        <tr class="table-group-divider align-middle">
+            <td>{{ vacancy['id'] }}</td>
+            <td>{{ vacancy['name'] }}</td>
+            <td>{{ vacancy['area']['name'] }}</td>
+            <td>{{ vacancy['schedule']['name'] }}</td>
+            <td>{{ ("от {}").format(vacancy['salary']['from']) if vacancy['salary']['from'] }} {{ ("до {}").format(vacancy['salary']['to']) if vacancy['salary']['to'] }} {{ ("{}").format(vacancy['salary']['currency']) if vacancy['salary']['currency'] }} {{ 'гросс' if vacancy['salary']['gross'] }}</td>
+            <td>{{ vacancy['employer']['name'] }}</td>
+            <td>{{ vacancy['published_at'] }}</td>
+        </tr>
+        <tr>
+            <td colspan="7" class="table-light">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-10">
+                            <p><strong>Обязанности</strong>: {{ vacancy['snippet']['responsibility'] }}</p>
+                            <p><strong>Требования</strong>: {{ vacancy['snippet']['requirement'] | safe }}</p>
+                        </div>
+                        <div class="col d-flex align-items-center">
+                            <form class="mb-1" action="{{ url_for('vacancy_save') }}" method="post">
+                                {{ form.hidden_tag() }}
+                                <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['id'] }}">
+                                {{ empty_form.submit(value="Сохранить", class="btn btn-primary") }}
+                                {{ empty_form.submit(value="Убрать", class="btn btn-primary") }}
+                            </form>
+                        </div>
+                    </div>
+                   
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

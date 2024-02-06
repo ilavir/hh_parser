@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import db
 from app import login
-from app.hh_auth import check_hh_authorization
+from app.hh_api import check_hh_authorization
 
 class User(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -36,3 +36,25 @@ class User(UserMixin, db.Model):
 @login.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
+
+class Vacancy(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    hh_id: so.Mapped[int] = so.mapped_column(unique=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128))
+
+    def __repr__(self):
+        return f'<Vacancy {self.hh_id}: {self.name}>'
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+    
+
+class Employer(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    hh_id: so.Mapped[int] = so.mapped_column(unique=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128))
+
+    def __repr__(self):
+        return f'<Employer {self.hh_id}: {self.name}>'

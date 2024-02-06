@@ -14,6 +14,7 @@
         <div class="row bg-info bg-opacity-25">
             <div class="col p-4">
                 <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('search') }}">Search</a>
             </div>
             <div class="col p-4 text-end">
                 {% if current_user.is_anonymous %}

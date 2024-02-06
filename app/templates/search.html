@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Поиск: {{ vacancy_name }}{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style>
+        .invalid-feedback {
+            display: block;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<form action="" method="get" class="container" novalidate>
+    <!-- {{ form.hidden_tag() }} -->
+    <div class="row">
+        <div class="col-auto">
+            {{ form.text(size=32, class="form-control", placeholder=params['text']) }}
+            {% for error in form.text.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="col-auto">
+            <!-- {{ form.area(class="form-select", selected="params['area']") }}
+            {% for error in form.area.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %} -->
+            <select class="form-select" id="area" name="area">
+                {% for option in form.area.choices %}
+                <option value="{{ option[0] }}" {{ 'selected' if option[0] == params['area'] }}>{{ option[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select" id="period" name="period">
+                {% for option in form.period.choices %}
+                <option value="{{ option[0] }}" {{ 'selected' if option[0] == params['period'] }}>{{ option[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </div>
+</form>
+<div class="container">
+    {% if vacancies %}
+    <div class="row my-3">
+        <div class="col">
+            Вакансий найдено: {{ vacancies['found'] }}<br>
+            Pages: {{ vacancies['pages'] }}<br>
+            Page: {{ vacancies['page'] }}<br>
+            Per page: {{ vacancies['per_page'] }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 ">
+            <ul class="pagination flex-wrap justify-content-center">
+                {% for page_num in range(0, vacancies['pages']) %}
+                    <li class="page-item {% if page_num == vacancies['page'] %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('search', text=params['text'], area=params['area'], period=params['period'], page=page_num) }}">{{ page_num + 1 }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            {% include '_vacancies_list.html' %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

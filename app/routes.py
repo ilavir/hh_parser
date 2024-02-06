@@ -4,15 +4,16 @@ from flask import render_template, request, flash, redirect, url_for, session
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
+import json
 
 from app import app, db
 from app.functions import (get_database_files, get_employer_by_id, get_vacancies,
                            get_vacancy_by_id, get_vacancy_relation_status_list,
                            change_vacancy_relation_status, change_vacancy_relation_notes, change_vacancy_relation_conversation_content, change_vacancy_relation_favorite,
                            change_employer_relation_notes)
-from app.hh_auth import get_hh_authorization_code, get_hh_tokens, refresh_hh_tokens
-from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User
+from app.hh_api import get_hh_authorization_code, get_hh_tokens, refresh_hh_tokens, hh_search_vacancies, hh_vacancy_get
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, SearchForm, EmptyForm
+from app.models import User, Vacancy
 
 
 @app.before_request
@@ -238,7 +239,7 @@ def hh_auth():
             user.access_token = access_token
             user.refresh_token = refresh_token
             db.session.commit()
-            app.logger.info('SUCCESS! New tokens are obtained and updated.')
+            app.logger.info('New tokens are obtained and updated.')
             flash('SUCCESS! New tokens are obtained and updated.')
 
             user.check_hh_auth()
@@ -264,6 +265,8 @@ def hh_auth():
             user.access_token = access_token
             user.refresh_token = refresh_token
             db.session.commit()
+            app.logger.info('New tokens are obtained and updated.')
+            flash('SUCCESS! New tokens are obtained and updated.')
         else:
             flash(f'ERROR! Failed to obtain tokens. Tokens are not updated.')
             app.logger.error(f'Failed to obtain tokens. Tokens are not updated.')
@@ -276,3 +279,44 @@ def hh_auth():
         return redirect(oauth_url)
     
     return redirect(url_for('user', username=current_user.username))
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    page = request.args.get('page', 0, type=int)
+    text = request.args.get('text', None)
+    per_page = request.args.get('per_page', 10)
+    area = request.args.get('area', 16)
+    period = request.args.get('period', None)
+
+    form = SearchForm()
+    empty_form = EmptyForm()
+    
+    params = {
+        'text': text,
+        'page': page,
+        'per_page': per_page,
+        'area': area,
+        'period': period,
+        'order_by': 'publication_time'
+    }
+    respond_json = hh_search_vacancies(params)
+
+    # Format date
+    for item in respond_json['items']:
+        datetime_obj = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%S%z")
+        item['published_at'] = datetime_obj.strftime("%d-%m-%Y")
+
+    return render_template('search.html', form=form, empty_form=empty_form, page=page, vacancies=respond_json, params=params)
+
+
+@app.route('/vacancy/_save', methods=['GET', 'POST'])
+def vacancy_save():
+    hh_id = request.form.get('vacancy_hh_id', None, str)
+
+    vacancy_json = hh_vacancy_get(hh_id)
+    vacancy = Vacancy(hh_id=vacancy_json['id'], name=vacancy_json['name'])
+    vacancy.save()
+    print(vacancy)
+
+    return 'Vacancy saved.'

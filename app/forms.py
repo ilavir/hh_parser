@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, Length
 import sqlalchemy as sa
 from app import db
@@ -47,3 +47,14 @@ class EditProfileForm(FlaskForm):
 
             if user is not None:
                 raise ValidationError('Please use a different username.')
+            
+
+class SearchForm(FlaskForm):
+    text = StringField('Keywords', validators=[DataRequired()])
+    area = SelectField('Area', choices=[('1002', 'Минск'), ('16', 'Беларусь')])
+    period = SelectField('Period', choices=[('1', '1 сутки'), ('3', '3 суток'), ('30', 'Месяц')])
+    submit = SubmitField('Submit')
+
+
+class EmptyForm(FlaskForm):
+    submit = SubmitField('Submit')

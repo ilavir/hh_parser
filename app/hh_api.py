@@ -109,3 +109,25 @@ def get_hh_tokens(authorization_code):
         refresh_token = None
     
     return access_token, refresh_token
+
+
+def hh_search_vacancies(params):
+    api_url = 'https://api.hh.ru/vacancies'
+    headers = {'user-agent': 'test-api'}
+
+    app.logger.info(f'Starting vacancies search (headers = {headers}, params = {params})...')
+    response = requests.get(api_url, params=params, headers=headers)
+    app.logger.info(f'Response Status Code: {response.status_code}')
+
+    return response.json()
+
+
+def hh_vacancy_get(hh_id):
+    api_url = 'https://api.hh.ru/vacancies/' + hh_id
+    headers = {'user-agent': 'test-api'}
+
+    app.logger.info(f'Retrieving vacancy details...')
+    response = requests.get(api_url, headers=headers)
+    app.logger.info(f'Response Status Code: {response.status_code}')
+
+    return response.json()
