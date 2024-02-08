@@ -13,7 +13,7 @@
     <!-- {{ form.hidden_tag() }} -->
     <div class="row">
         <div class="col-auto">
-            {{ form.text(size=32, class="form-control", placeholder=params['text']) }}
+            {{ form.text(size=32, class="form-control", value=params['text']) }}
             {% for error in form.text.errors %}
                 <div class="invalid-feedback">{{ error }}</div>
             {% endfor %}

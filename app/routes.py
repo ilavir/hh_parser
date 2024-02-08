@@ -315,8 +315,13 @@ def vacancy_save():
     hh_id = request.form.get('vacancy_hh_id', None, str)
 
     vacancy_json = hh_vacancy_get(hh_id)
-    vacancy = Vacancy(hh_id=vacancy_json['id'], name=vacancy_json['name'])
-    vacancy.save()
-    print(vacancy)
 
-    return 'Vacancy saved.'
+    # Format date
+    published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z")
+    created_at_obj = datetime.strptime(vacancy_json['created_at'], "%Y-%m-%dT%H:%M:%S%z")
+
+    vacancy = Vacancy(hh_id=vacancy_json['id'], name=vacancy_json['name'], area=vacancy_json['area']['id'], employer=vacancy_json['employer']['id'],
+                      alternate_url=vacancy_json['alternate_url'], published_at=published_at_obj, created_at=created_at_obj)
+    response = vacancy.save_or_update(current_user.id)
+
+    return response
