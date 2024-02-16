@@ -310,8 +310,8 @@ def search():
     for item in vacancies_json['items']:
         
         if current_user.is_authenticated:
-            vacancy_relation = get_relation(current_user, int(item['id']))
-            print(vacancy_relation)
+            vacancy_relation = get_relation(current_user.id, int(item['id']))
+            #print(vacancy_relation)
             
             if vacancy_relation:
                 item['custom_in_db'] = True
@@ -325,6 +325,7 @@ def search():
 
 
 @app.route('/vacancy/_save', methods=['GET', 'POST'])
+@login_required
 def vacancy_save():
     form = EmptyForm()
 
@@ -332,34 +333,15 @@ def vacancy_save():
         vacancy_hh_id = request.form.get('vacancy_hh_id', None, str)
         vacancy_snippet = request.form.get('vacancy_snippet', None)
 
-        relation = get_relation(current_user, int(vacancy_hh_id))
-
-        if not relation:
-            relation = VacancyRelation(user_id=current_user.id)
-            db.session.add(relation)
-
-        if request.form.get('submit') == 'Сохранить':
-            print('Сохранить')
-            relation.hidden = False
-        elif request.form.get('submit') == 'Скрыть':
-            print('Скрыть')
-            relation.hidden = True
-        else:
-            relation.hidden = None
-        
         response = hh_vacancy_get(vacancy_hh_id, current_user)
         vacancy_json = response.json()
-        vacancy_snippet_json = ast.literal_eval(vacancy_snippet)
-
-        # Vacancy JSON refactoring. Format date to UTC timezone
-        published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
-        initial_created_at_obj = datetime.strptime(vacancy_json['initial_created_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
 
         ## Create Employer
         if vacancy_json['employer']['id']:
             employer = get_employer(vacancy_json['employer']['id'])
 
             if not employer:
+                app.logger.debug('New Employer')
                 response = hh_employer_get(vacancy_json['employer']['id'], current_user)
                 employer_json = response.json()
 
@@ -379,45 +361,92 @@ def vacancy_save():
                                 industries=json.dumps(industries) if industries else None,
                                 alternate_url=employer_json['alternate_url']
                                 )
-                
+            else:
+                app.logger.debug('Existing Employer')
+                app.logger.debug(employer)
         else:
             employer = None
         
 
         ## Create Vacancy
-
-        # *temporary* Make a list for professional_roles
-        professional_roles = []
-        for role in vacancy_json['professional_roles']:
-            role_id = DictProfessionalRoles.query.filter_by(hh_id=role['id']).first()
-            professional_roles.append(role_id.id)
-
         vacancy = get_vacancy(vacancy_json['id'])
+        published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+
+        if not vacancy:
+            app.logger.debug('New Vacancy')
+            
+            vacancy_snippet_json = ast.literal_eval(vacancy_snippet)
+
+            # Vacancy JSON refactoring. Format date to UTC timezone
+            
+            initial_created_at_obj = datetime.strptime(vacancy_json['initial_created_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+            
+            # *temporary* Make a list for professional_roles
+            professional_roles = []
+            for role in vacancy_json['professional_roles']:
+                role_id = DictProfessionalRoles.query.filter_by(hh_id=role['id']).first()
+                professional_roles.append(role_id.id)
+
+            vacancy = Vacancy(hh_id=vacancy_json['id'],
+                            name=vacancy_json['name'],
+                            archived=vacancy_json['archived'],
+                            salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None,
+                            address=json.dumps(vacancy_json['address'], ensure_ascii=False) if vacancy_json['address'] else None,
+                            contacts=json.dumps(vacancy_json['contacts'], ensure_ascii=False) if vacancy_json['contacts'] else None,
+                            snippet=json.dumps(vacancy_snippet_json, ensure_ascii=False),
+                            description=json.dumps(vacancy_json['description'], ensure_ascii=False),
+                            key_skills=json.dumps(vacancy_json['key_skills'], ensure_ascii=False) if vacancy_json['key_skills'] else None,
+                            professional_roles=json.dumps(professional_roles) if professional_roles else None,
+                            area_id=vacancy_json['area']['id'],
+                            employment_id=vacancy_json['employment']['id'],
+                            experience_id=vacancy_json['experience']['id'],
+                            schedule_id=vacancy_json['schedule']['id'],
+                            type_id=vacancy_json['type']['id'],
+                            employer_id=vacancy_json['employer']['id'],
+                            alternate_url=vacancy_json['alternate_url'],
+                            published_at=published_at_obj,
+                            initial_created_at=initial_created_at_obj,
+                            )
+        else:
+            app.logger.debug('Existing Vacancy')
+            vacancy.hh_id=vacancy_json['id']
+            vacancy.name=vacancy_json['name']
+            vacancy.archived=vacancy_json['archived']
+            vacancy.salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None
+            vacancy.description=json.dumps(vacancy_json['description'], ensure_ascii=False)
+            vacancy.published_at=published_at_obj
+            vacancy.updated_at = datetime.now(timezone.utc)
+            db.session.add(vacancy)
+            app.logger.debug(vacancy)
         
-        vacancy = Vacancy(hh_id=vacancy_json['id'],
-                        name=vacancy_json['name'],
-                        archived=vacancy_json['archived'],
-                        salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None,
-                        address=json.dumps(vacancy_json['address'], ensure_ascii=False) if vacancy_json['address'] else None,
-                        contacts=json.dumps(vacancy_json['contacts'], ensure_ascii=False) if vacancy_json['contacts'] else None,
-                        snippet=json.dumps(vacancy_snippet_json, ensure_ascii=False),
-                        description=json.dumps(vacancy_json['description'], ensure_ascii=False),
-                        key_skills=json.dumps(vacancy_json['key_skills'], ensure_ascii=False) if vacancy_json['key_skills'] else None,
-                        professional_roles=json.dumps(professional_roles) if professional_roles else None,
-                        area_id=vacancy_json['area']['id'],
-                        employment_id=vacancy_json['employment']['id'],
-                        experience_id=vacancy_json['experience']['id'],
-                        schedule_id=vacancy_json['schedule']['id'],
-                        type_id=vacancy_json['type']['id'],
-                        employer_id=vacancy_json['employer']['id'],
-                        alternate_url=vacancy_json['alternate_url'],
-                        published_at=published_at_obj,
-                        initial_created_at=initial_created_at_obj,
-                        #employer=employer
-                        )
+
+        # Create relation
+        if current_user.is_authenticated:
+            relation = get_relation(current_user.id, int(vacancy_hh_id))
+
+            if not relation:
+                app.logger.debug('New relation')
+                relation = VacancyRelation(user_id=current_user.id)
+                app.logger.debug(relation)
+            else:
+                app.logger.debug('Existing relation')
+                app.logger.debug(relation)
+
+            if request.form.get('submit') == 'Сохранить':
+                print('Сохранить')
+                relation.hidden = False
+            elif request.form.get('submit') == 'Скрыть':
+                print('Скрыть')
+                relation.hidden = True
+            elif request.form.get('submit') == 'Показать':
+                print('Показать')
+                relation.hidden = False
+        else:
+            relation = None
         
-        response = vacancy.save_or_update(employer, current_user, relation_hide)
+
+        response = vacancy.save_or_update(employer, current_user, relation)
     else:
-        response = 'Something went wrong.'
+        return redirect(url_for('search'))
 
     return response

@@ -76,7 +76,6 @@ class Employer(db.Model):
             db.session.add(self)
             self.area = db.session.scalar(sa.select(DictArea).where(DictArea.hh_id == self.area_id))
             self.type = db.session.scalar(sa.select(DictEmployerType).where(DictEmployerType.hh_id == self.type_id))
-            #db.session.commit()
             app.logger.debug(f'Employer (ID: {self.id}) "{self.hh_id}: {self.name}" added to database.')
             return True
         else:
@@ -144,41 +143,19 @@ class Vacancy(db.Model):
     
     # Format Vacancy for saving in DB
     def save(self):
-        if not self.if_exists():
-            db.session.add(self)
-            self.area = db.session.scalar(sa.select(DictArea).where(DictArea.hh_id == self.area_id))
-            self.employment = db.session.scalar(sa.select(DictEmployment).where(DictEmployment.hh_id == self.employment_id))
-            self.experience = db.session.scalar(sa.select(DictExperience).where(DictExperience.hh_id == self.experience_id))
-            self.schedule = db.session.scalar(sa.select(DictSchedule).where(DictSchedule.hh_id == self.schedule_id))
-            self.type = db.session.scalar(sa.select(DictVacancyType).where(DictVacancyType.hh_id == self.type_id))
-            app.logger.debug(f'Vacancy (ID: {self.id}) "{self.hh_id}: {self.name}" added to database.')
-            return True
-        else:
-            app.logger.debug(f'Vacancy (ID: {self.id}) "{self.hh_id}: {self.name}" already exists.')
-            return False
+        db.session.add(self)
+        self.area = db.session.scalar(sa.select(DictArea).where(DictArea.hh_id == self.area_id))
+        self.employment = db.session.scalar(sa.select(DictEmployment).where(DictEmployment.hh_id == self.employment_id))
+        self.experience = db.session.scalar(sa.select(DictExperience).where(DictExperience.hh_id == self.experience_id))
+        self.schedule = db.session.scalar(sa.select(DictSchedule).where(DictSchedule.hh_id == self.schedule_id))
+        self.type = db.session.scalar(sa.select(DictVacancyType).where(DictVacancyType.hh_id == self.type_id))
+        app.logger.debug(f'Vacancy (ID: {self.id}) "{self.hh_id}: {self.name}" added to database.')
 
-    # Format Vacancy to update existing vacancy in DB
-    def update(self):
-        vacancy = db.session.scalar(sa.select(Vacancy).where(Vacancy.hh_id == self.hh_id))
-        app.logger.debug(self)
-        app.logger.debug(vacancy)
-        vacancy.updated_at = datetime.now(timezone.utc)
-        vacancy.name = self.name
-        vacancy.description = self.description
-        vacancy.archived = self.archived
-        vacancy.salary = self.salary
-        vacancy.published_at = self.published_at
-        #db.session.add(vacancy)
-        #db.session.commit()
-        app.logger.debug(f'Vacancy (ID: {vacancy.id}) "{vacancy.hh_id}: {vacancy.name}" updated.')
-
-        return vacancy
-
-    def save_or_update(self, employer, user, relation_hide=False):
+    def save_or_update(self, employer, user, relation):
         app.logger.debug(self)
         app.logger.debug(employer)
         app.logger.debug(user)
-        app.logger.debug(relation_hide)
+        app.logger.debug(relation)
 
         # Create new Vacancy if not exists
         if not self.if_exists():
@@ -191,32 +168,32 @@ class Vacancy(db.Model):
                 self.employer = employer
             # Update Employer if exists
             else:
-                #self.employer = db.session.scalar(sa.select(Employer).where(Employer.hh_id == employer.hh_id))
+                self.employer = employer
                 app.logger.debug('Existing employer.')
 
             self.save()
-            self.add_user(user)
+            app.logger.debug(self)
+            if user not in self.users and user.is_authenticated:
+                relation.vacancy_id = self.id
+                db.session.add(relation)
+            app.logger.debug(relation)
+
         # Update Vacancy if exists
         else:
             app.logger.debug('Existing vacancy.')
-            vacancy = self.update()
-            if user not in vacancy.users:
-                vacancy.users.append(user)
-            else:
-                relation = get_relation(user, vacancy.hh_id)
-                relation.hidden = relation_hide
-
-            #vacancy.add_user(user)
+            if user not in self.users and user.is_authenticated:
+                relation.vacancy_id = self.id
+                db.session.add(relation)
 
         db.session.commit()
 
         return 'Worked'
     
-    def add_user(self, user):
-        if user not in self.users:
-            self.users.append(user)
-            #db.session.add(self)
-            app.logger.debug(f'User "{user.id}" added to vacancy "{self.id}".')
+    #def add_user(self, user):
+    #    if user not in self.users:
+    #        self.users.append(user)
+    #        #db.session.add(self)
+    #        app.logger.debug(f'User "{user.id}" added to vacancy "{self.id}".')
 
 # Get Vacancy object by vacancy hh_id
 def get_vacancy(hh_id):
