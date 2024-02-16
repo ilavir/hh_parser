@@ -111,23 +111,73 @@ def get_hh_tokens(authorization_code):
     return access_token, refresh_token
 
 
-def hh_search_vacancies(params):
+def hh_search_vacancies(params, user):
     api_url = 'https://api.hh.ru/vacancies'
     headers = {'user-agent': 'test-api'}
-
     app.logger.info(f'Starting vacancies search (headers = {headers}, params = {params})...')
+
+    if user.is_authenticated:
+        access_token = user.access_token
+        headers['authorization'] = 'Bearer ' + access_token
+        response = requests.get(api_url, params=params, headers=headers)
+        app.logger.info(f'Response Status Code: {response.status_code}')
+
+        if response.status_code == 200:
+            return response
+        if response.status_code == 403:
+            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            app.logger.warning(f'Bad request. Error message: {response.json()}')
+            del headers['authorization']
+    
     response = requests.get(api_url, params=params, headers=headers)
     app.logger.info(f'Response Status Code: {response.status_code}')
 
-    return response.json()
+    return response
 
 
-def hh_vacancy_get(hh_id):
+def hh_vacancy_get(hh_id, user):
     api_url = 'https://api.hh.ru/vacancies/' + hh_id
     headers = {'user-agent': 'test-api'}
-
     app.logger.info(f'Retrieving vacancy details...')
+
+    if user.is_authenticated:
+        access_token = user.access_token
+        headers['authorization'] = 'Bearer ' + access_token
+        response = requests.get(api_url, headers=headers)
+        app.logger.info(f'Response Status Code: {response.status_code}')
+
+        if response.status_code == 200:
+            return response
+        if response.status_code == 403:
+            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            app.logger.warning(f'Bad request. Error message: {response.json()}')
+            del headers['authorization']
+    
     response = requests.get(api_url, headers=headers)
     app.logger.info(f'Response Status Code: {response.status_code}')
 
-    return response.json()
+    return response
+
+
+def hh_employer_get(hh_id, user):
+    api_url = 'https://api.hh.ru/employers/' + hh_id
+    headers = {'user-agent': 'test-api'}
+    app.logger.info(f'Retrieving employer details...')
+
+    if user.is_authenticated:
+        access_token = user.access_token
+        headers['authorization'] = 'Bearer ' + access_token
+        response = requests.get(api_url, headers=headers)
+        app.logger.info(f'Response Status Code: {response.status_code}')
+
+        if response.status_code == 200:
+            return response
+        if response.status_code == 403:
+            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            app.logger.warning(f'Bad request. Error message: {response.json()}')
+            del headers['authorization']
+    
+    response = requests.get(api_url, headers=headers)
+    app.logger.info(f'Response Status Code: {response.status_code}')
+
+    return response

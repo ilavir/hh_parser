@@ -10,7 +10,7 @@
             <th scope="col">Обновлено</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody>{{ vacancies_in_db }}
         {% for vacancy in vacancies['items'] %}
         <tr class="table-group-divider align-middle">
             <td>{{ vacancy['id'] }}</td>
@@ -25,16 +25,26 @@
             <td colspan="7" class="table-light">
                 <div class="container">
                     <div class="row">
-                        <div class="col-10">
+                        <div class="col-9">
                             <p><strong>Обязанности</strong>: {{ vacancy['snippet']['responsibility'] }}</p>
                             <p><strong>Требования</strong>: {{ vacancy['snippet']['requirement'] | safe }}</p>
                         </div>
-                        <div class="col d-flex align-items-center">
+                        <div class="col d-flex align-items-center justify-content-end">
                             <form class="mb-1" action="{{ url_for('vacancy_save') }}" method="post">
                                 {{ form.hidden_tag() }}
                                 <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['id'] }}">
-                                {{ empty_form.submit(value="Сохранить", class="btn btn-primary") }}
-                                {{ empty_form.submit(value="Убрать", class="btn btn-primary") }}
+                                <input id="vacancy_snippet" name="vacancy_snippet" type="hidden" value="{{ vacancy['snippet'] }}">
+                                {% if not vacancy['custom_in_db'] %}
+                                    {{ empty_form.submit(value="Сохранить", class="btn btn-primary") }}
+                                    {{ empty_form.submit(value="Скрыть", class="btn btn-secondary") }}
+                                {% else %}
+                                    {{ empty_form.submit(value="Обновить", class="btn btn-success") }}
+                                    {% if not vacancy['custom_hidden'] %}
+                                        {{ empty_form.submit(value="Скрыть", class="btn btn-secondary") }}
+                                    {% else %}
+                                        {{ empty_form.submit(value="Показать", class="btn btn-primary") }}
+                                    {% endif %}
+                                {% endif %}
                             </form>
                         </div>
                     </div>
