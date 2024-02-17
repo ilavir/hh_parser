@@ -1,6 +1,6 @@
 from math import ceil
 from datetime import datetime, timezone
-from flask import render_template, request, flash, redirect, url_for, session
+from flask import render_template, request, flash, redirect, url_for, session, jsonify
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
@@ -303,25 +303,27 @@ def search():
         'period': period,
         'order_by': 'publication_time'
     }
+    # Get vacancies list from HH API
     response = hh_search_vacancies(params, current_user)
     vacancies_json = response.json()
 
     # Vacancy JSON refactoring
     for item in vacancies_json['items']:
         
+        # Get vacancy relations from DB
         if current_user.is_authenticated:
             vacancy_relation = get_relation(current_user.id, int(item['id']))
-            #print(vacancy_relation)
-            
+
             if vacancy_relation:
                 item['custom_in_db'] = True
                 item['custom_hidden'] = vacancy_relation.hidden
 
         #item['id'] = int(item['id'])
+        # Format date for displaying in search results
         datetime_obj = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
         item['published_at'] = datetime_obj.strftime("%d-%m-%Y")
 
-    return render_template('search.html', form=form, empty_form=empty_form, page=page, vacancies=vacancies_json, params=params)
+    return render_template('search.html', form=form, empty_form=empty_form, page=page, vacancies=vacancies_json, params=params, user=current_user)
 
 
 @app.route('/vacancy/_save', methods=['GET', 'POST'])
@@ -333,15 +335,18 @@ def vacancy_save():
         vacancy_hh_id = request.form.get('vacancy_hh_id', None, str)
         vacancy_snippet = request.form.get('vacancy_snippet', None)
 
+        # Get vacancy details from HH API
         response = hh_vacancy_get(vacancy_hh_id, current_user)
         vacancy_json = response.json()
 
         ## Create Employer
         if vacancy_json['employer']['id']:
+            # Get employer from DB
             employer = get_employer(vacancy_json['employer']['id'])
 
             if not employer:
                 app.logger.debug('New Employer')
+                # Get employer details from HH API
                 response = hh_employer_get(vacancy_json['employer']['id'], current_user)
                 employer_json = response.json()
 
@@ -351,6 +356,7 @@ def vacancy_save():
                     industry_id = DictIndustries.query.filter_by(hh_id=industry['id']).first()
                     industries.append(industry_id.id)
 
+                # Create employer instance for new employer 
                 employer = Employer(hh_id=employer_json['id'],
                                 name=employer_json['name'],
                                 description=employer_json['description'],
@@ -369,16 +375,17 @@ def vacancy_save():
         
 
         ## Create Vacancy
+        # Get vacancy from DB
         vacancy = get_vacancy(vacancy_json['id'])
         published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
 
         if not vacancy:
             app.logger.debug('New Vacancy')
             
+            # Format snipped to JSON
             vacancy_snippet_json = ast.literal_eval(vacancy_snippet)
 
             # Vacancy JSON refactoring. Format date to UTC timezone
-            
             initial_created_at_obj = datetime.strptime(vacancy_json['initial_created_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
             
             # *temporary* Make a list for professional_roles
@@ -387,6 +394,7 @@ def vacancy_save():
                 role_id = DictProfessionalRoles.query.filter_by(hh_id=role['id']).first()
                 professional_roles.append(role_id.id)
 
+            # Create vacancy instance for new vacancy
             vacancy = Vacancy(hh_id=vacancy_json['id'],
                             name=vacancy_json['name'],
                             archived=vacancy_json['archived'],
@@ -408,6 +416,7 @@ def vacancy_save():
                             initial_created_at=initial_created_at_obj,
                             )
         else:
+            # Update vacancy in DB
             app.logger.debug('Existing Vacancy')
             vacancy.hh_id=vacancy_json['id']
             vacancy.name=vacancy_json['name']
@@ -422,31 +431,57 @@ def vacancy_save():
 
         # Create relation
         if current_user.is_authenticated:
+            # Get vacancy relation from DB
             relation = get_relation(current_user.id, int(vacancy_hh_id))
 
             if not relation:
                 app.logger.debug('New relation')
                 relation = VacancyRelation(user_id=current_user.id)
+                # Get relations from HH API response
+                relation.relations = json.dumps(vacancy_json['relations']) if vacancy_json['relations'] else None
                 app.logger.debug(relation)
             else:
                 app.logger.debug('Existing relation')
+                # Get relations from HH API response
+                relation.relations = json.dumps(vacancy_json['relations']) if vacancy_json['relations'] else None
                 app.logger.debug(relation)
 
-            if request.form.get('submit') == 'Сохранить':
-                print('Сохранить')
-                relation.hidden = False
-            elif request.form.get('submit') == 'Скрыть':
-                print('Скрыть')
-                relation.hidden = True
-            elif request.form.get('submit') == 'Показать':
-                print('Показать')
-                relation.hidden = False
+            # Actions to "Save", "Hide", "Unhide" buttons clicked
+            action = request.form.get('action')
+
+            if action == 'hide_unhide':
+                if relation.hidden == True or relation is None:
+                    relation.hidden = False
+                    button_text = 'Скрыть'  # New text for the button
+                    button_class = 'btn-secondary'  # New class for the button
+                    background_class1 = None  # New background class for the button container tr
+                    background_class2 = None  # Optional Secondary backround class for the button container tr
+                    app.logger.debug('unhide')
+                else:
+                    relation.hidden = True
+                    button_text = 'Показать'
+                    button_class = 'btn-success'
+                    background_class1 = 'bg-secondary'
+                    background_class2 = 'bg-opacity-25'
+                    app.logger.debug('hide')
+            if action == 'save':
+                button_text = 'Обновить'
+                button_class = 'btn-success'
+                background_class1 = None  # New background class for the button container tr
+                background_class2 = None  # Optional Secondary backround class for the button container tr
+                app.logger.debug('save')
         else:
             relation = None
-        
 
+        # Save or update vacancy relation (with vacancy and employer saved or updated in DB)
         response = vacancy.save_or_update(employer, current_user, relation)
-    else:
-        return redirect(url_for('search'))
+        app.logger.debug(response)
 
+        # Make a response for JS when clicked "Save", "Hide", "Unhide" buttons
+        if action == 'hide_unhide' or action == 'save':
+            return jsonify({'buttonText': button_text, 'buttonClass': button_class, 'backgroundClass1': background_class1, 'backgroundClass2': background_class2})
+    else:
+        # Redirect if form not validated
+        return redirect(url_for('search'))
+    
     return response

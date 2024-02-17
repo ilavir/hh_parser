@@ -8,11 +8,18 @@
             <th scope="col">Зарплата</th>
             <th scope="col">Работодатель</th>
             <th scope="col">Обновлено</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>{{ vacancies_in_db }}
         {% for vacancy in vacancies['items'] %}
-        <tr class="table-group-divider align-middle">
+        
+        <tr class="table-group-divider align-middle
+            {{ 'bg-secondary bg-opacity-25' if vacancy['custom_hidden'] }}
+            {{ 'bg-danger bg-opacity-50' if 'got_rejection' in vacancy['relations'] }}
+            {{ 'bg-success bg-opacity-50' if 'got_response' in vacancy['relations'] }}
+            {{ 'bg-warning bg-opacity-50' if 'got_invitation' in vacancy['relations'] }}
+            ">
             <td>{{ vacancy['id'] }}</td>
             <td>{{ vacancy['name'] }}</td>
             <td>{{ vacancy['area']['name'] }}</td>
@@ -20,36 +27,52 @@
             <td>{{ ("от {}").format(vacancy['salary']['from']) if vacancy['salary']['from'] }} {{ ("до {}").format(vacancy['salary']['to']) if vacancy['salary']['to'] }} {{ ("{}").format(vacancy['salary']['currency']) if vacancy['salary']['currency'] }} {{ 'гросс' if vacancy['salary']['gross'] }}</td>
             <td>{{ vacancy['employer']['name'] }}</td>
             <td>{{ vacancy['published_at'] }}</td>
+            <td class="text-end">
+                {% if user.is_authenticated %}
+                <form id="hiddenForm{{ vacancy['id'] }}" class="mb-1" action="{{ url_for('vacancy_save') }}" method="post">
+                    <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['id'] }}">
+                    <input id="vacancy_snippet" name="vacancy_snippet" type="hidden" value="{{ vacancy['snippet'] }}">
+                    {{ form.hidden_tag() }}
+                    {% if not vacancy['custom_hidden'] %}
+                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                        Скрыть
+                    </button>
+                    {% else %}
+                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                        Показать
+                    </button>
+                    {% endif %}
+                </form>
+                {% else %}
+                <a class="btn btn-primary" href="{{ url_for('login') }}">Sign&nbsp;In</a>
+                {% endif %}
+            </td>
         </tr>
-        <tr>
-            <td colspan="7" class="table-light">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-9">
+        <tr class="bg-light">
+            <td class="p-0" colspan="8">
+                <div id="collapse{{ vacancy['id'] }}" class="container collapse {{ 'show' if not vacancy['custom_hidden'] }}">
+                    <div class="row pt-2">
+                        <div class="col">
                             <p><strong>Обязанности</strong>: {{ vacancy['snippet']['responsibility'] }}</p>
                             <p><strong>Требования</strong>: {{ vacancy['snippet']['requirement'] | safe }}</p>
                         </div>
-                        <div class="col d-flex align-items-center justify-content-end">
-                            <form class="mb-1" action="{{ url_for('vacancy_save') }}" method="post">
-                                {{ form.hidden_tag() }}
+                        {% if user.is_authenticated %}
+                        <div class="col-1 d-flex align-items-center justify-content-end">
+                            <form id="hiddenForm{{ vacancy['id'] }}" class="mb-1" action="{{ url_for('vacancy_save') }}" method="post">
                                 <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['id'] }}">
                                 <input id="vacancy_snippet" name="vacancy_snippet" type="hidden" value="{{ vacancy['snippet'] }}">
+                                {{ form.hidden_tag() }}
                                 {% if not vacancy['custom_in_db'] %}
-                                    {{ empty_form.submit(value="Сохранить", class="btn btn-primary") }}
-                                    {{ empty_form.submit(value="Скрыть", class="btn btn-secondary") }}
+                                <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-primary" type="button">Сохранить</button>
                                 {% else %}
-                                    {{ empty_form.submit(value="Обновить", class="btn btn-success") }}
-                                    {% if not vacancy['custom_hidden'] %}
-                                        {{ empty_form.submit(value="Скрыть", class="btn btn-secondary") }}
-                                    {% else %}
-                                        {{ empty_form.submit(value="Показать", class="btn btn-primary") }}
-                                    {% endif %}
+                                <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-success" type="button">Обновить</button>
                                 {% endif %}
                             </form>
                         </div>
+                        {% endif %}
                     </div>
-                   
                 </div>
+            </form>
             </td>
         </tr>
         {% endfor %}

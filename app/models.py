@@ -82,16 +82,6 @@ class Employer(db.Model):
             app.logger.debug(f'Employer (ID: {self.id}) "{self.hh_id}: {self.name}" already exists.')
             return False
 
-    def update(self):
-        exists = self.get(self)
-
-    def save_or_update(self, user, hidden=False):
-        if self.if_exists():
-            self.update(user, hidden)
-            return f'Vacancy {self.hh_id}: {self.name} updated.'
-        else:
-            self.save(user, hidden)
-            return f'Vacancy {self.hh_id}: {self.name} added to database.'
 
 # Get Employer object by employer hh_id
 def get_employer(hh_id):
@@ -103,7 +93,9 @@ class Vacancy(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True, autoincrement=True)
     hh_id: so.Mapped[int] = so.mapped_column(unique=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(128))
+    updated_at: so.Mapped[Optional[datetime]] = so.mapped_column(default=datetime.utcnow)
     archived: so.Mapped[Optional[bool]] = so.mapped_column()
+    employer_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(Employer.id, name='fk_vacancy_employer_id'), index=True)
     salary: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
     address: so.Mapped[Optional[str]] = so.mapped_column()
     contacts: so.Mapped[Optional[str]] = so.mapped_column()
@@ -112,17 +104,14 @@ class Vacancy(db.Model):
     key_skills: so.Mapped[Optional[str]] = so.mapped_column()
     professional_roles: so.Mapped[Optional[str]] = so.mapped_column() # *temporary* # dict
     #professional_roles_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictProfessionalRoles.id, name='fk_vacancy_professional_roles_id'), index=True) # dict
-    employer_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(Employer.id, name='fk_vacancy_employer_id'), index=True)
     area_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(DictArea.id, name='fk_vacancy_area_id'), index=True) # dict
     employment_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictEmployment.id, name='fk_vacancy_employment_id'), index=True) # dict
     experience_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictExperience.id, name='fk_vacancy_experience_id'), index=True) # dict
     schedule_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictSchedule.id, name='fk_vacancy_schedule_id'), index=True) # dict
     type_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictVacancyType.id, name='fk_vacancy_type_id'), index=True) # dict
     alternate_url: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
-    updated_at: so.Mapped[Optional[datetime]] = so.mapped_column(default=datetime.utcnow)
     published_at: so.Mapped[Optional[datetime]] = so.mapped_column()
     initial_created_at: so.Mapped[Optional[datetime]] = so.mapped_column()
-
     employer: so.Mapped[Employer] = so.relationship(back_populates='vacancies')
     area: so.Mapped[DictArea] = so.relationship(backref='vacancies')
     employment: so.Mapped[DictEmployment] = so.relationship(backref='vacancies')
@@ -187,7 +176,9 @@ class Vacancy(db.Model):
 
         db.session.commit()
 
-        return 'Worked'
+        return f'Vacancy (ID: {self.id}) "{self.hh_id}: {self.name}" added or updated. \
+                Employer (ID: {employer.id}) "{employer.hh_id}: {employer.name}" added or updated. \
+                Relation {relation} added or updated.'
     
     #def add_user(self, user):
     #    if user not in self.users:

@@ -67,6 +67,51 @@
             {% include '_vacancies_list.html' %}
         </div>
     </div>
+    <div class="row">
+        <div class="col-12 ">
+            <ul class="pagination flex-wrap justify-content-center">
+                {% for page_num in range(0, vacancies['pages']) %}
+                    <li class="page-item {% if page_num == vacancies['page'] %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('search', text=params['text'], area=params['area'], period=params['period'], page=page_num) }}">{{ page_num + 1 }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block js %}
+    {{ super() }}
+    <script>
+        function submitForm(form, action) {
+            var formData = new FormData(form);
+            formData.append("action", action);
+    
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "{{ url_for('vacancy_save') }}", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        // Update button color and name based on response
+                        var button = form.querySelector('button[data-action="' + action + '"]');
+                        button.textContent = response.buttonText;
+                        button.className = "btn " + response.buttonClass;
+                        // Change background color of parent <tr>
+                        var tr = button.closest('tr');
+                        if (response.backgroundClass1) {
+                            tr.classList.add(response.backgroundClass1, response.backgroundClass2);  // Add background class
+                        } else {
+                            tr.classList.remove('bg-secondary', 'bg-opacity-25');  // Remove background classes if not applicable
+                        }
+                    } else {
+                        // Handle error response
+                    }
+                }
+            };
+            xhr.send(formData);
+        }
+    </script>       
 {% endblock %}
