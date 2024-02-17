@@ -460,9 +460,9 @@ def vacancy_save():
                 else:
                     relation.hidden = True
                     button_text = 'Показать'
-                    button_class = 'btn-success'
-                    background_class1 = 'bg-secondary'
-                    background_class2 = 'bg-opacity-25'
+                    button_class = 'btn-outline-secondary'
+                    background_class1 = 'bg-light'
+                    background_class2 = None
                     app.logger.debug('hide')
             if action == 'save':
                 button_text = 'Обновить'

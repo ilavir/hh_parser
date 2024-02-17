@@ -10,7 +10,6 @@
 {% endblock %}
 {% block content %}
 <form action="" method="get" class="container" novalidate>
-    <!-- {{ form.hidden_tag() }} -->
     <div class="row">
         <div class="col-auto">
             {{ form.text(size=32, class="form-control", value=params['text']) }}
@@ -104,7 +103,7 @@
                         if (response.backgroundClass1) {
                             tr.classList.add(response.backgroundClass1, response.backgroundClass2);  // Add background class
                         } else {
-                            tr.classList.remove('bg-secondary', 'bg-opacity-25');  // Remove background classes if not applicable
+                            tr.classList.remove('bg-light');  // Remove background classes if not applicable
                         }
                     } else {
                         // Handle error response
