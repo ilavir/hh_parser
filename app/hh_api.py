@@ -136,7 +136,7 @@ def hh_search_vacancies(params, user):
 
 
 def hh_vacancy_get(hh_id, user):
-    api_url = 'https://api.hh.ru/vacancies/' + hh_id
+    api_url = 'https://api.hh.ru/vacancies/' + str(hh_id)
     headers = {'user-agent': 'test-api'}
     app.logger.info(f'Retrieving vacancy details...')
 
@@ -152,15 +152,15 @@ def hh_vacancy_get(hh_id, user):
             flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
-    
-    response = requests.get(api_url, headers=headers)
-    app.logger.info(f'Response Status Code: {response.status_code}')
+    else:
+        response = requests.get(api_url, headers=headers)
+        app.logger.info(f'Response Status Code: {response.status_code}')
 
     return response
 
 
 def hh_employer_get(hh_id, user):
-    api_url = 'https://api.hh.ru/employers/' + hh_id
+    api_url = 'https://api.hh.ru/employers/' + str(hh_id)
     headers = {'user-agent': 'test-api'}
     app.logger.info(f'Retrieving employer details...')
 
@@ -176,8 +176,8 @@ def hh_employer_get(hh_id, user):
             flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
-    
-    response = requests.get(api_url, headers=headers)
-    app.logger.info(f'Response Status Code: {response.status_code}')
+    else:
+        response = requests.get(api_url, headers=headers)
+        app.logger.info(f'Response Status Code: {response.status_code}')
 
     return response

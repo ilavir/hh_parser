@@ -17,6 +17,7 @@ from app.hh_api import get_hh_authorization_code, get_hh_tokens, refresh_hh_toke
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, SearchForm, EmptyForm
 from app.models import User, Vacancy, get_vacancy, Employer, get_employer, VacancyRelation, get_relation
 from app.hh_dicts import DictProfessionalRoles, DictIndustries
+import re
 
 
 @app.before_request
@@ -26,7 +27,7 @@ def before_request():
         db.session.commit()
 
 
-@app.route('/', methods=['POST', 'GET'])
+'''@app.route('/', methods=['POST', 'GET'])
 @login_required
 def index():
     db_files = get_database_files()
@@ -49,69 +50,14 @@ def index():
 
     return render_template('index.html', db_files=db_files, selected_db=selected_db,
                            vacancies=vacancies, pagination=pagination, status_list=relation_status_list)
+'''
 
+@app.route('/')
+def index():
 
-@app.route('/vacancy/<hh_id>', methods=['POST', 'GET'])
-def vacancy_detail(hh_id):
-    db_files = get_database_files()
-    selected_db = request.args.get('db', None)
+    return redirect(url_for('search'))
 
-    if not selected_db:
-        return 'No database name specified.'
-    elif selected_db not in db_files:
-        return 'No database found.'
-
-    page_source = request.args.get('page_source', 1)
-
-    vacancy_id = request.form.get('vacancy_id', None)
-    notes_content = request.form.get('notes_content', None)
-    conversation_content = request.form.get('conversation_content', None)
-
-    if notes_content is not None:
-        change_vacancy_relation_notes(selected_db, vacancy_id, notes_content)
-
-    if conversation_content is not None:
-        change_vacancy_relation_conversation_content(
-            selected_db, vacancy_id, conversation_content)
-
-    vacancy = get_vacancy_by_id(selected_db, hh_id)
-
-    if not vacancy:
-        return "Vacancy not found", 404
-
-    relation_status_list = get_vacancy_relation_status_list(selected_db)
-
-    return render_template('vacancy.html', vacancy=vacancy, selected_db=selected_db, status_list=relation_status_list, page_source=page_source)
-
-
-@app.route('/employer/<hh_id>', methods=['POST', 'GET'])
-def employer_detail(hh_id):
-    db_files = get_database_files()
-    selected_db = request.args.get('db', None)
-
-    if not selected_db:
-        return 'No database name specified.'
-    elif selected_db not in db_files:
-        return 'No database found.'
-
-    vacancy_source = request.args.get('vacancy_hh_id', None)
-    page_source = request.args.get('page_source', 1)
-
-    employer_id = request.form.get('employer_id', None)
-    notes_content = request.form.get('notes_content', None)
-
-    if notes_content is not None:
-        change_employer_relation_notes(selected_db, employer_id, notes_content)
-
-    employer, industries = get_employer_by_id(selected_db, hh_id)
-
-    if not employer:
-        return "Employer not found", 404
-
-    return render_template('employer.html', employer=employer, selected_db=selected_db, industries=industries, vacancy_source=vacancy_source, page_source=page_source)
-
-
-@app.route('/update_content', methods=['POST'])
+'''@app.route('/update_content', methods=['POST'])
 def update_content():
     selected_db = request.form.get('db')
     vacancy_id = request.form.get('vacancy_id', None)
@@ -127,7 +73,7 @@ def update_content():
             selected_db, vacancy_id, relation_status)
 
     return 'Good'
-
+'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -318,116 +264,195 @@ def search():
                 item['custom_in_db'] = True
                 item['custom_hidden'] = vacancy_relation.hidden
 
-        #item['id'] = int(item['id'])
         # Format date for displaying in search results
         datetime_obj = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
         item['published_at'] = datetime_obj.strftime("%d-%m-%Y")
 
+        remove_tags = re.compile('<.*?>')
+        if item['snippet']['requirement']:
+            item['snippet']['requirement'] = re.sub(remove_tags, '', item['snippet']['requirement'])
+        if item['snippet']['responsibility']:
+            item['snippet']['responsibility'] = re.sub(remove_tags, '', item['snippet']['responsibility'])
+
     return render_template('search.html', form=form, empty_form=empty_form, page=page, vacancies=vacancies_json, params=params, user=current_user)
 
 
-@app.route('/vacancy/_save', methods=['GET', 'POST'])
-@login_required
-def vacancy_save():
+@app.route('/employer/<employer_hh_id>')
+def employer_detail(employer_hh_id):
+    # Get Vacancy from DB or create
+    employer = get_employer(employer_hh_id)
+    app.logger.debug(f'employer_detail(): Employer in DB: {employer}')
+
+    if not employer:
+        app.logger.debug('employer_detail(): Employer not in DB')
+        employer = Employer(hh_id=employer_hh_id)
+        employer = employer_save(employer)
+        if employer == 404:
+            return '404 Error: Employer not found', 404
+    else:
+        employer = employer_update(employer)
+
+    db.session.commit()
+
+    ## Render employer details page
+    # Get industry ID's from Dictionary and convert them to list of names for displaying in employer details
+    industries = []
+    industries_json = json.loads(employer.industries) if employer.industries else None
+    if industries_json is not None:
+        for industry in industries_json:
+            industry_name = DictIndustries.query.filter_by(id=industry).first()
+            industries.append(industry_name.name)
+    employer.industries_json = industries
+
+    return render_template('employer.html', employer=employer)
+
+
+def employer_save(employer):
+    employer_response = hh_employer_get(employer.hh_id, current_user)
+
+    if employer_response.status_code == 404:
+        app.logger.debug('employer_save(): Employer not found')
+
+        return 404
+    
+    employer_json = employer_response.json()
+    
+    employer.save_from_hh(employer_json)
+    app.logger.debug(f'employer_save(): Employer added to DB: {employer}')
+
+    return employer
+
+def employer_update(employer):
+
+    return employer
+
+
+@app.route('/vacancy/<vacancy_hh_id>', methods=['GET', 'POST'])
+def vacancy_detail(vacancy_hh_id):
+    vacancy_snippet = request.form.get('vacancy_snippet', None)
+
+    # Get Vacancy from DB or create
+    vacancy = get_vacancy(vacancy_hh_id)
+    app.logger.debug(f'vacancy_detail(): Vacancy in DB: {vacancy}')
+
+    if not vacancy:
+        app.logger.debug('vacancy_detail(): Vacancy not in DB')
+        vacancy = Vacancy(hh_id=vacancy_hh_id)
+        vacancy = vacancy_save(vacancy, vacancy_snippet)
+        if vacancy == 404:
+            return '404 Error: Vacancy not found', 404
+    else:
+        # vacancy = vacancy_update(vacancy)
+        pass
+
+    db.session.commit()
+
+    if current_user.is_authenticated:
+        # Get vacancy relation from DB
+        relation = get_relation(current_user.id, int(vacancy.hh_id))
+    else:
+        relation = None
+
+    ## Render vacancy details page
+    # Convert strings to JSON for displaying in vacancy details
+    vacancy.salary_json = json.loads(vacancy.salary) if vacancy.salary else None
+    vacancy.address_json = json.loads(vacancy.address) if vacancy.address else None
+    vacancy.contacts_json = json.loads(vacancy.contacts) if vacancy.contacts else None
+    vacancy.key_skills_json = json.loads(vacancy.key_skills) if vacancy.key_skills else None
+    # Format date for displaying in vacancy details
+    vacancy.published_at_formatted = vacancy.published_at.strftime("%d-%m-%Y")
+
+    # Get professional roles ID's from Dictionary and convert them to list of names for displaying in vacancy details
+    professional_roles = []
+    professional_roles_json = json.loads(vacancy.professional_roles) if vacancy.professional_roles else None
+    for role in professional_roles_json:
+        role_name = DictProfessionalRoles.query.filter_by(id=role).first()
+        professional_roles.append(role_name.name)
+    vacancy.professional_roles_json = professional_roles
+
+    form = EmptyForm()
+    
+    return render_template('vacancy.html', vacancy=vacancy, user=current_user, relation=relation, form=form)
+
+
+def vacancy_save(vacancy, vacancy_snippet=None):
+    vacancy_response = hh_vacancy_get(vacancy.hh_id, current_user)
+
+    if vacancy_response.status_code == 404:
+        app.logger.debug('vacancy_save(): Vacancy not found')
+
+        return 404
+
+    vacancy_json = vacancy_response.json()
+
+    if 'employer' in vacancy_json and 'id' in vacancy_json['employer']:
+        # Get Employer from DB or create
+        employer = get_employer(vacancy_json['employer']['id'])
+        app.logger.debug(f'vacancy_save(): Employer in DB: {employer}')
+
+        if not employer:
+            app.logger.debug('vacancy_save(): Employer not in DB')
+            employer = Employer(hh_id=vacancy_json['employer']['id'])
+            employer = employer_save(employer)
+        else:
+            employer = employer_update(employer)
+    else:
+        employer = None
+    
+    # vacancy = Vacancy(hh_id=vacancy_json['id'])
+    try:
+        vacancy_snippet_json = json.loads(vacancy_snippet) if vacancy_snippet else None
+    except ValueError as e:
+        vacancy_snippet_json = ast.literal_eval(vacancy_snippet) if vacancy_snippet else None
+    vacancy.snippet = json.dumps(vacancy_snippet_json, ensure_ascii=False) if vacancy_snippet_json else None
+    vacancy.employer = employer
+    vacancy.save_from_hh(vacancy_json)
+    vacancy.relations = vacancy_json.get('relations', None)
+    app.logger.debug(f'vacancy_save(): Vacancy added to DB: {vacancy}')
+
+    return vacancy
+
+def vacancy_update(vacancy, vacancy_snippet=None):
+    vacancy_response = hh_vacancy_get(vacancy.hh_id, current_user)
+
+    if vacancy_response.status_code == 404:
+        app.logger.debug('vacancy_update(): Vacancy not found')
+        flash(f'WARNING! Vacancy {vacancy} was deleted from HH.')
+        # return '404 Error: Vacancy not found', 404
+    
+    vacancy_json = vacancy_response.json()
+    # try:
+    #     vacancy_snippet_json = json.loads(vacancy_snippet) if vacancy_snippet else None
+    # except ValueError as e:
+    #     vacancy_snippet_json = ast.literal_eval(vacancy_snippet) if vacancy_snippet else None
+    # vacancy.snippet = json.dumps(vacancy_snippet_json, ensure_ascii=False) if vacancy_snippet_json else None
+    vacancy.update_from_hh(vacancy_json)
+    vacancy.relations = vacancy_json.get('relations', None)
+    app.logger.debug(f'vacancy_update(): Vacancy updated: {vacancy}')
+
+    return vacancy
+
+
+@app.route('/vacancy/_save', methods=['POST'])
+def vacancy_save_or_update():
     form = EmptyForm()
 
     if form.validate_on_submit():
         vacancy_hh_id = request.form.get('vacancy_hh_id', None, str)
         vacancy_snippet = request.form.get('vacancy_snippet', None)
 
-        # Get vacancy details from HH API
-        response = hh_vacancy_get(vacancy_hh_id, current_user)
-        vacancy_json = response.json()
-
-        ## Create Employer
-        if vacancy_json['employer']['id']:
-            # Get employer from DB
-            employer = get_employer(vacancy_json['employer']['id'])
-
-            if not employer:
-                app.logger.debug('New Employer')
-                # Get employer details from HH API
-                response = hh_employer_get(vacancy_json['employer']['id'], current_user)
-                employer_json = response.json()
-
-                # *temporary* Make a list for professional_roles
-                industries = []
-                for industry in employer_json['industries']:
-                    industry_id = DictIndustries.query.filter_by(hh_id=industry['id']).first()
-                    industries.append(industry_id.id)
-
-                # Create employer instance for new employer 
-                employer = Employer(hh_id=employer_json['id'],
-                                name=employer_json['name'],
-                                description=employer_json['description'],
-                                site_url=employer_json['site_url'] if employer_json['site_url'] else None,
-                                trusted=employer_json['trusted'],
-                                type_id=employer_json['type'],
-                                area_id=employer_json['area']['id'],
-                                industries=json.dumps(industries) if industries else None,
-                                alternate_url=employer_json['alternate_url']
-                                )
-            else:
-                app.logger.debug('Existing Employer')
-                app.logger.debug(employer)
-        else:
-            employer = None
-        
-
-        ## Create Vacancy
-        # Get vacancy from DB
-        vacancy = get_vacancy(vacancy_json['id'])
-        published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+        # Get Vacancy from DB or create
+        vacancy = get_vacancy(vacancy_hh_id)
+        app.logger.debug(f'vacancy_save_or_update(): Vacancy in DB: {vacancy}')
 
         if not vacancy:
-            app.logger.debug('New Vacancy')
-            
-            # Format snipped to JSON
-            vacancy_snippet_json = ast.literal_eval(vacancy_snippet)
-
-            # Vacancy JSON refactoring. Format date to UTC timezone
-            initial_created_at_obj = datetime.strptime(vacancy_json['initial_created_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
-            
-            # *temporary* Make a list for professional_roles
-            professional_roles = []
-            for role in vacancy_json['professional_roles']:
-                role_id = DictProfessionalRoles.query.filter_by(hh_id=role['id']).first()
-                professional_roles.append(role_id.id)
-
-            # Create vacancy instance for new vacancy
-            vacancy = Vacancy(hh_id=vacancy_json['id'],
-                            name=vacancy_json['name'],
-                            archived=vacancy_json['archived'],
-                            salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None,
-                            address=json.dumps(vacancy_json['address'], ensure_ascii=False) if vacancy_json['address'] else None,
-                            contacts=json.dumps(vacancy_json['contacts'], ensure_ascii=False) if vacancy_json['contacts'] else None,
-                            snippet=json.dumps(vacancy_snippet_json, ensure_ascii=False),
-                            description=json.dumps(vacancy_json['description'], ensure_ascii=False),
-                            key_skills=json.dumps(vacancy_json['key_skills'], ensure_ascii=False) if vacancy_json['key_skills'] else None,
-                            professional_roles=json.dumps(professional_roles) if professional_roles else None,
-                            area_id=vacancy_json['area']['id'],
-                            employment_id=vacancy_json['employment']['id'],
-                            experience_id=vacancy_json['experience']['id'],
-                            schedule_id=vacancy_json['schedule']['id'],
-                            type_id=vacancy_json['type']['id'],
-                            employer_id=vacancy_json['employer']['id'],
-                            alternate_url=vacancy_json['alternate_url'],
-                            published_at=published_at_obj,
-                            initial_created_at=initial_created_at_obj,
-                            )
+            app.logger.debug('vacancy_save_or_update(): Vacancy not in DB')
+            vacancy = Vacancy(hh_id=vacancy_hh_id)
+            vacancy = vacancy_save(vacancy, vacancy_snippet)
+            if vacancy == 404:
+                return '404 Error: Vacancy not found', 404
         else:
-            # Update vacancy in DB
-            app.logger.debug('Existing Vacancy')
-            vacancy.hh_id=vacancy_json['id']
-            vacancy.name=vacancy_json['name']
-            vacancy.archived=vacancy_json['archived']
-            vacancy.salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None
-            vacancy.description=json.dumps(vacancy_json['description'], ensure_ascii=False)
-            vacancy.published_at=published_at_obj
-            vacancy.updated_at = datetime.now(timezone.utc)
-            db.session.add(vacancy)
-            app.logger.debug(vacancy)
-        
+            vacancy = vacancy_update(vacancy, vacancy_snippet)
 
         # Create relation
         if current_user.is_authenticated:
@@ -436,15 +461,13 @@ def vacancy_save():
 
             if not relation:
                 app.logger.debug('New relation')
-                relation = VacancyRelation(user_id=current_user.id)
-                # Get relations from HH API response
-                relation.relations = json.dumps(vacancy_json['relations']) if vacancy_json['relations'] else None
-                app.logger.debug(relation)
+                relation = VacancyRelation(user_id=current_user.id, vacancy_id=vacancy.id)
+                db.session.add(relation)
             else:
                 app.logger.debug('Existing relation')
-                # Get relations from HH API response
-                relation.relations = json.dumps(vacancy_json['relations']) if vacancy_json['relations'] else None
-                app.logger.debug(relation)
+
+            relation.relations = json.dumps(vacancy.relations)
+            app.logger.debug(relation)
 
             # Actions to "Save", "Hide", "Unhide" buttons clicked
             action = request.form.get('action')
@@ -473,15 +496,13 @@ def vacancy_save():
         else:
             relation = None
 
-        # Save or update vacancy relation (with vacancy and employer saved or updated in DB)
-        response = vacancy.save_or_update(employer, current_user, relation)
-        app.logger.debug(response)
+        db.session.commit()
 
         # Make a response for JS when clicked "Save", "Hide", "Unhide" buttons
         if action == 'hide_unhide' or action == 'save':
             return jsonify({'buttonText': button_text, 'buttonClass': button_class, 'backgroundClass1': background_class1, 'backgroundClass2': background_class2})
     else:
         # Redirect if form not validated
-        return redirect(url_for('search'))
+        return 'Form not validated', 500
     
-    return response
+    return 'ok'

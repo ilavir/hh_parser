@@ -6,6 +6,21 @@
         .invalid-feedback {
             display: block;
         }
+        .button-submit-link {
+            border: none;
+            outline: none;
+            background: none;
+            cursor: pointer;
+            color: var(--bs-link-color);
+            padding: 0;
+            text-decoration: underline;
+            font-family: inherit;
+            font-size: inherit;
+            text-align: left;
+        }
+        .button-submit-link:hover {
+            color:var(--bs-link-hover-color)
+        }
     </style>
 {% endblock %}
 {% block content %}
@@ -89,7 +104,7 @@
             formData.append("action", action);
     
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "{{ url_for('vacancy_save') }}", true);
+            xhr.open("POST", "{{ url_for('vacancy_save_or_update') }}", true);
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     if (xhr.status === 200) {

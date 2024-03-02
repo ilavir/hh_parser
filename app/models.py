@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 from typing import Optional
+import json
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import app, db, login
-from app.hh_api import check_hh_authorization
+from app.hh_api import check_hh_authorization, hh_employer_get
 from app.hh_dicts import DictArea, DictEmployerType, DictEmployment, DictExperience, DictIndustries, DictProfessionalRoles, DictSchedule, DictVacancyType
 
 class User(UserMixin, db.Model):
@@ -81,6 +82,26 @@ class Employer(db.Model):
         else:
             app.logger.debug(f'Employer (ID: {self.id}) "{self.hh_id}: {self.name}" already exists.')
             return False
+        
+    def save_from_hh(self, employer_json):
+        if not self.if_exists():
+             # *temporary* Make a list for professional_roles
+            industries = []
+            for industry in employer_json['industries']:
+                industry_id = DictIndustries.query.filter_by(hh_id=industry['id']).first()
+                industries.append(industry_id.id)
+
+            db.session.add(self)
+            self.name=employer_json['name']
+            self.description=employer_json['description']
+            self.site_url=employer_json['site_url'] if employer_json['site_url'] else None
+            self.trusted=employer_json['trusted']
+            self.industries=json.dumps(industries) if industries else None
+            self.alternate_url=employer_json['alternate_url']
+            self.area = db.session.scalar(sa.select(DictArea).where(DictArea.hh_id == employer_json['area']['id']))
+            self.type = db.session.scalar(sa.select(DictEmployerType).where(DictEmployerType.hh_id == employer_json['type']))
+
+        return self
 
 
 # Get Employer object by employer hh_id
@@ -99,7 +120,7 @@ class Vacancy(db.Model):
     salary: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
     address: so.Mapped[Optional[str]] = so.mapped_column()
     contacts: so.Mapped[Optional[str]] = so.mapped_column()
-    snippet: so.Mapped[Optional[str]] = so.mapped_column()
+    snippet: so.Mapped[Optional[str]] = so.mapped_column(sa.Text)
     description: so.Mapped[Optional[str]] = so.mapped_column(sa.Text)
     key_skills: so.Mapped[Optional[str]] = so.mapped_column()
     professional_roles: so.Mapped[Optional[str]] = so.mapped_column() # *temporary* # dict
@@ -112,12 +133,14 @@ class Vacancy(db.Model):
     alternate_url: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
     published_at: so.Mapped[Optional[datetime]] = so.mapped_column()
     initial_created_at: so.Mapped[Optional[datetime]] = so.mapped_column()
+
     employer: so.Mapped[Employer] = so.relationship(back_populates='vacancies')
     area: so.Mapped[DictArea] = so.relationship(backref='vacancies')
     employment: so.Mapped[DictEmployment] = so.relationship(backref='vacancies')
     experience: so.Mapped[DictExperience] = so.relationship(backref='vacancies')
     schedule: so.Mapped[DictSchedule] = so.relationship(backref='vacancies')
     type: so.Mapped[DictVacancyType] = so.relationship(backref='vacancies')
+    #relation: so.WriteOnlyMapped['VacancyRelation'] = so.relationship(secondary='vacancy_relation')
 
     def __repr__(self):
         return f'<Vacancy (ID: {self.id}) "{self.hh_id}: {self.name}">'
@@ -130,6 +153,52 @@ class Vacancy(db.Model):
         query = sa.select(Vacancy).where(Vacancy.hh_id == self.hh_id)
         return db.session.scalar(query)
     
+    def save_from_hh(self, vacancy_json):
+        if not self.if_exists():
+            # Vacancy JSON refactoring. Format date to UTC timezone
+            published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+            initial_created_at_obj = datetime.strptime(vacancy_json['initial_created_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+            # *temporary* Make a list for professional_roles
+            professional_roles = []
+            for role in vacancy_json['professional_roles']:
+                role_id = DictProfessionalRoles.query.filter_by(hh_id=role['id']).first()
+                professional_roles.append(role_id.id)
+
+            db.session.add(self)
+            self.name=vacancy_json['name']
+            self.archived=vacancy_json['archived']
+            self.salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None
+            self.address=json.dumps(vacancy_json['address'], ensure_ascii=False) if vacancy_json['address'] else None
+            self.contacts=json.dumps(vacancy_json['contacts'], ensure_ascii=False) if vacancy_json['contacts'] else None
+            self.description = vacancy_json['description'] if vacancy_json['description'] else None
+            self.key_skills=json.dumps(vacancy_json['key_skills'], ensure_ascii=False) if vacancy_json['key_skills'] else None
+            self.professional_roles=json.dumps(professional_roles) if professional_roles else None
+            self.area = db.session.scalar(sa.select(DictArea).where(DictArea.hh_id == vacancy_json['area']['id']))
+            self.employment = db.session.scalar(sa.select(DictEmployment).where(DictEmployment.hh_id == vacancy_json['employment']['id']))
+            self.experience = db.session.scalar(sa.select(DictExperience).where(DictExperience.hh_id == vacancy_json['experience']['id']))
+            self.schedule = db.session.scalar(sa.select(DictSchedule).where(DictSchedule.hh_id == vacancy_json['schedule']['id']))
+            self.type = db.session.scalar(sa.select(DictVacancyType).where(DictVacancyType.hh_id == vacancy_json['type']['id']))
+            self.alternate_url=vacancy_json['alternate_url']
+            self.published_at=published_at_obj
+            self.initial_created_at=initial_created_at_obj
+
+        return self
+    
+    def update_from_hh(self, vacancy_json):
+        if self.if_exists():
+            self.updated_at = datetime.now(timezone.utc)
+            # Vacancy JSON refactoring. Format date to UTC timezone
+            published_at_obj = datetime.strptime(vacancy_json['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+            self.published_at=published_at_obj
+            self.name=vacancy_json['name']
+            self.archived=vacancy_json['archived']
+            self.salary=json.dumps(vacancy_json['salary']) if vacancy_json['salary'] else None
+            self.address=json.dumps(vacancy_json['address'], ensure_ascii=False) if vacancy_json['address'] else None
+            self.contacts=json.dumps(vacancy_json['contacts'], ensure_ascii=False) if vacancy_json['contacts'] else None
+            self.description = vacancy_json['description'] if vacancy_json['description'] else None
+
+        return self
+
     # Format Vacancy for saving in DB
     def save(self):
         db.session.add(self)
