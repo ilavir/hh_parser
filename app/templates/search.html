@@ -78,7 +78,7 @@
     </div>
     <div class="row">
         <div class="col">
-            {% include '_vacancies_list.html' %}
+            {% include '_vacancies_search.html' %}
         </div>
     </div>
     <div class="row">
@@ -112,7 +112,7 @@
                         // Update button color and name based on response
                         var button = form.querySelector('button[data-action="' + action + '"]');
                         button.textContent = response.buttonText;
-                        button.className = "btn " + response.buttonClass;
+                        button.className = "btn btn-sm " + response.buttonClass;
                         // Change background color of parent <tr>
                         var tr = button.closest('tr');
                         if (response.backgroundClass1) {

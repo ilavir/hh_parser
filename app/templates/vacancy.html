@@ -3,13 +3,43 @@
 {% block content %}
 <div class="container">
     <div class="row mb-3">
-        <div class="col-1">
+        <!-- <div class="col-1">
             <a href="javascript:history.back()" class="btn btn-primary text-nowrap">Вернуться</a>
-        </div>
+        </div> -->
         <div class="col text-center">
             <h1>{{ vacancy.name }}</h1>
         </div>
-        <div class="col-2 text-end text-nowrap">
+    </div>
+    {% if vacancy.archived %}
+    <div class="row"><div class="col"><div class="alert alert-secondary">Вакансия в архиве</div></div></div>
+    {% endif %}
+    {% if relation.hh_relations %}
+        {% if 'got_rejection' in relation.hh_relations %}
+        <div class="row"><div class="col"><div class="alert alert-danger">Отказ</div></div></div>
+        {% elif 'got_invitation' in relation.hh_relations %}
+        <div class="row"><div class="col"><div class="alert alert-success">Приглашение</div></div></div>
+        {% elif 'got_response' in relation.hh_relations %}
+        <div class="row"><div class="col"><div class="alert alert-info">Откликнулся</div></div></div>
+        {% endif %}
+    {% endif %}
+    <div class="row mb-3">
+        <div class="col">
+            {% if user.is_authenticated %}
+            <form action="{{ url_for('vacancy_status_update') }}" method="post">
+                {{ form.hidden_tag() }}
+                <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['hh_id'] }}">
+                <button name="status_update" value="new" class="btn btn-outline-primary btn-sm {{ 'active' if relation.relation_status_id == 'new' }}" type="submit">Новые</button>
+                <button name="status_update" value="applied" class="btn btn-outline-info btn-sm {{ 'active' if relation.relation_status_id == 'applied' }}" type="submit">Откликнулся</button>
+                <button name="status_update" value="interview" class="btn btn-outline-success btn-sm {{ 'active' if relation.relation_status_id == 'interview' }}" type="submit">Интервью</button>
+                <button name="status_update" value="rejected" class="btn btn-outline-danger btn-sm {{ 'active' if relation.relation_status_id == 'rejected' }}" type="submit">Отказ</button>
+                <button name="status_update" value="offer" class="btn btn-outline-warning btn-sm {{ 'active' if relation.relation_status_id == 'offer' }}" type="submit">Оффер</button>
+                <button name="status_update" value="unsuitable" class="btn btn-outline-secondary btn-sm {{ 'active' if relation.relation_status_id == 'unsuitable' }}" type="submit">Не подходит</button>
+                <button name="status_update" value="archived" class="btn btn-outline-secondary btn-sm {{ 'active' if relation.relation_status_id == 'archived' }}" type="submit">Архив</button>
+                <!-- <button class="btn btn-outline-secondary btn-sm">Скрытые</button> -->
+            </form>
+            {% endif %}
+        </div>
+        <div class="col-2 text-end">
             {% if user.is_authenticated %}
             <form id="hiddenForm{{ vacancy['hh_id'] }}" class="" action="{{ url_for('vacancy_save_or_update') }}" method="post">
                 
@@ -18,15 +48,15 @@
                 {{ form.hidden_tag() }}
 
                 {% if not relation.hidden %}
-                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-secondary" type="button">Скрыть</button>
+                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-secondary btn-sm" type="button">Скрыть</button>
                 {% else %}
-                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-outline-secondary" type="button">Показать</button>
+                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-outline-secondary btn-sm" type="button">Показать</button>
                 {% endif %}
             
                 {% if not relation %}
-                <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-primary" type="button">Сохранить</button>
+                <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-sm btn-primary" type="button">Сохранить</button>
                 {% else %}
-                <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-success" type="button">Обновить</button>
+                <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-sm btn-success" type="button">Обновить</button>
                 {% endif %}
 
             </form>
@@ -35,15 +65,6 @@
             {% endif %}
         </div>
     </div>
-    {% if relation.relations %}
-        {% if 'got_rejection' in relation.relations %}
-        <div class="row"><div class="col"><div class="alert alert-danger">Отказ</div></div></div>
-        {% elif 'got_invitation' in relation.relations %}
-        <div class="row"><div class="col"><div class="alert alert-success">Приглашение</div></div></div>
-        {% elif 'got_response' in relation.relations %}
-        <div class="row"><div class="col"><div class="alert alert-info">Откликнулся</div></div></div>
-        {% endif %}
-    {% endif %}
     <div class="row">
         <div class="col">
             <p><strong>ID:</strong> <a href="{{ vacancy.alternate_url }}" target="_blank">{{ vacancy.hh_id }}</a> &mdash; {{ vacancy.name }}</p>
@@ -67,7 +88,7 @@
         <div class="col-6 text-end">
             <p><a href="{{ url_for('employer_detail', employer_hh_id=vacancy.employer.hh_id) }}">{{ vacancy.employer.name }}</a> (<a href="{{ vacancy.employer.alternate_url }}" target="_blank">{{ vacancy.employer.hh_id }}</a>)</p>
             <!-- {% if employer_relation_notes %}<p><pre>{{ employer_relation_notes }}</pre></p>{% endif %} -->
-            {% if vacancy.contacts_json %}
+            {% if vacancy.address_json %}
                 {% set address_raw = vacancy.address_json['raw'] %}
 
                 <p><a href="https://maps.yandex.ru?text={{ address_raw }}" target="_blank">{{ address_raw }}</a></p>
@@ -126,7 +147,7 @@
                         // Update button color and name based on response
                         var button = form.querySelector('button[data-action="' + action + '"]');
                         button.textContent = response.buttonText;
-                        button.className = "btn " + response.buttonClass;
+                        button.className = "btn btn-sm " + response.buttonClass;
                         // Change background color of parent <tr>
                         var tr = button.closest('tr');
                         if (response.backgroundClass1) {

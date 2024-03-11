@@ -8,6 +8,8 @@ from flask_login import UserMixin
 from app import app, db, login
 from app.hh_api import check_hh_authorization, hh_employer_get
 from app.hh_dicts import DictArea, DictEmployerType, DictEmployment, DictExperience, DictIndustries, DictProfessionalRoles, DictSchedule, DictVacancyType
+from typing import List
+from typing import Dict
 
 class User(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True, autoincrement=True)
@@ -261,18 +263,39 @@ def get_vacancy(hh_id):
     return db.session.scalar(query)
 
 
+class DictRelationStatus(db.Model):
+    id: so.Mapped[str] = so.mapped_column(sa.String(64), primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128), unique=True)
+
+    relations: so.Mapped['VacancyRelation'] = so.relationship(back_populates='status')
+    
+    def __repr__(self):
+        return f'<DictRelationStatus "{self.id}: {self.name}">'
+    
+
+def init_relation_status():
+    for status in [('new', 'Новые'), ('applied', 'Откликнулся'), ('interview', 'Интервью'), ('rejected', 'Отказ'), ('offer', 'Оффер'), ('unsuitable', 'Не подходит'), ('archived', 'Архив')]:
+        new_item = DictRelationStatus(id=status[0], name=status[1])
+        db.session.add(new_item)
+
+    db.session.commit()
+    print('Relation Status dictionary created.')
+
+
 class VacancyRelation(db.Model):
     #id: so.Mapped[int] = so.mapped_column(primary_key=True)
     user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id), primary_key=True)
     vacancy_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Vacancy.id), primary_key=True)
     hidden: so.Mapped[bool] = so.mapped_column(default=False, nullable=False)
-    relations: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
-    notes: so.Mapped[Optional[str]] = so.mapped_column(sa.Text)
+    favorite: so.Mapped[bool] = so.mapped_column(default=False, nullable=False)
+    relation_status_id: so.Mapped[Optional[str]] = so.mapped_column(sa.ForeignKey(DictRelationStatus.id, name='fk_relation_status_id'))
+    hh_relations: so.Mapped[Optional[List[Dict]]] = so.mapped_column(sa.JSON)
+
+    status: so.Mapped[DictRelationStatus] = so.relationship(back_populates='relations')
 
     def __repr__(self):
         return f'<Relation "{self.user_id}: {self.vacancy_id}">'
     
-    #def update(self):
 
 def get_relation(user_id, vacancy_hh_id):
     user_alias = so.aliased(User)

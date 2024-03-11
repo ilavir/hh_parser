@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style>
+        .highlight {
+            color: var(--bs-alert-color);
+            background-color: var(--bs-alert-bg);
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col text-center">
+            <h1>Dashboard</h1>
+        </div>
+    </div>
+    <div class="row">
+        <ul class="nav nav-tabs">
+            {% set status_applied = relation_status_list[0] if relation_status_list else None %}
+            {% set status_interview = relation_status_list[1] if relation_status_list else None %}
+            {% set status_rejected = relation_status_list[2] if relation_status_list else None %}
+            {% set status_offer = relation_status_list[3] if relation_status_list else None %}
+            {% set status_unsuitable = relation_status_list[4] if relation_status_list else None %}
+            {% set status_archived = relation_status_list[5] if relation_status_list else None %}
+            {% set status_hidden = relation_status_list[6] if relation_status_list else None %}
+            {% set status_new = relation_status_list[7] if relation_status_list else None %}
+            <li class="nav-item"><a href="{{ url_for('dashboard', show='all') }}" class="nav-link {{ 'active' if show == 'all' }}">Мои вакансии</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_new.id) }}" class="nav-link text-primary {{ 'active' if show == status_new.id }}">{{ status_new.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_applied.id) }}" class="nav-link text-info {{ 'active' if show == status_applied.id }}">{{ status_applied.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_interview.id) }}" class="nav-link text-success {{ 'active' if show == status_interview.id }}">{{ status_interview.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_rejected.id) }}" class="nav-link text-danger {{ 'active' if show == status_rejected.id }}">{{ status_rejected.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_offer.id) }}" class="nav-link text-warning {{ 'active' if show == status_offer.id }}">{{ status_offer.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_unsuitable.id) }}" class="nav-link text-secondary {{ 'active' if show == status_unsuitable.id }}">{{ status_unsuitable.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_archived.id) }}" class="nav-link text-secondary {{ 'active' if show == status_archived.id }}">{{ status_archived.name }}</a></li>
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_hidden.id) }}" class="nav-link text-secondary {{ 'active' if show == status_hidden.id }}">{{ status_hidden.name }}</a></li>
+        </ul>
+    </div>
+    <div class="row">
+        <div class="col">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">HH ID</th>
+                        <th scope="col">Вакансия</th>
+                        <th scope="col">Город</th>
+                        <th scope="col">График</th>
+                        <th scope="col">Зарплата</th>
+                        <th scope="col">Работодатель</th>
+                        <th scope="col">Обновлено</th>
+                        <th scope="col" class="text-center"><!-- <a href="#">Выделить</a> --></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if vacancies %}
+                    {% for vacancy in vacancies %}
+                    <tr class="table-group-divider align-middle
+                    {{ 'bg-light' if vacancy.relation.hidden }}
+                    {{ 'highlight alert-danger' if vacancy.relation.hh_relations and 'got_rejection' in vacancy.relation.hh_relations }}
+                    {{ 'highlight alert-info ' if vacancy.relation.hh_relations and 'got_response' in vacancy.relation.hh_relations }}
+                    {{ 'highlight alert-success' if vacancy.relation.hh_relations and 'got_invitation' in vacancy.relation.hh_relations }}
+                    {{ 'highlight alert-secondary' if vacancy.archived }}
+                    ">
+                        <td><a href="{{ vacancy.alternate_url }}" target="_blank">{{ vacancy.hh_id }}</a></td>
+                        <td><a href="{{ url_for('vacancy_detail', vacancy_hh_id=vacancy.hh_id) }}">{{ vacancy.name }}</a></td>
+                        <td>{{ vacancy.area.name }}</td>
+                        <td>{{ vacancy.schedule.name }}</td>
+                        <td>
+                            {{ ("от {}").format(vacancy.salary_json['from']) if vacancy.salary_json['from'] }}
+                            {{ ("до {}").format(vacancy.salary_json['to']) if vacancy.salary_json['to'] }}
+                            {{ ("{}").format(vacancy.salary_json['currency']) if vacancy.salary_json['currency'] }}
+                            {{ "гросс" if vacancy.salary_json['gross'] }}
+                        </td>
+                        <td><a href="{{ url_for('employer_detail', employer_hh_id=vacancy.employer.hh_id) }}">{{ vacancy.employer.name }}</a></td>
+                        <td>{{ vacancy.published_at_formatted }}</td>
+                        <td class="text-nowrap text-end">
+                            <form id="hiddenForm{{ vacancy.hh_id }}" class="" action="{{ url_for('vacancy_save_or_update') }}" method="post">
+                                <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy.hh_id }}">
+                                {{ form.hidden_tag() }}
+            
+                                {% if not vacancy.relation.hidden %}
+                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                                    Скрыть
+                                </button>
+                                {% else %}
+                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                                    Показать
+                                </button>
+                                {% endif %}
+                                <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-sm btn-success" type="button">Обновить</button>
+                            </form>
+                        </td>
+                        <!-- <td class="text-center"><input class="form-check-input" type="checkbox" name="vacancy_checkbox" value=""></td> -->
+                    </tr>
+                    <tr class="bg-light">
+                        <td class="p-0" colspan="8">
+                            <div id="collapse{{ vacancy['id'] }}" class="container collapse {{ 'show' if not vacancy.relation.hidden }}">
+                                <div class="row pt-2">
+                                    <div class="col">
+                                        <p>{{ vacancy.description[:300]|safe + '...' }}</p>
+                                        {% if vacancy.key_skills_json %}
+                                        <p><strong>Навыки:</strong>
+                                            {% for skill in vacancy.key_skills_json %}
+                                                {{ skill['name'] }}{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+    {{ super() }}
+    <script>
+        function submitForm(form, action) {
+            var formData = new FormData(form);
+            formData.append("action", action);
+    
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "{{ url_for('vacancy_save_or_update') }}", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        // Update button color and name based on response
+                        var button = form.querySelector('button[data-action="' + action + '"]');
+                        button.textContent = response.buttonText;
+                        button.className = "btn btn-sm " + response.buttonClass;
+                        // Change background color of parent <tr>
+                        var tr = button.closest('tr');
+                        if (response.backgroundClass1) {
+                            tr.classList.add(response.backgroundClass1, response.backgroundClass2);  // Add background class
+                        } else {
+                            tr.classList.remove('bg-light');  // Remove background classes if not applicable
+                        }
+                    } else {
+                        // Handle error response
+                    }
+                }
+            };
+            xhr.send(formData);
+        }
+    </script>       
+{% endblock %}

@@ -5,6 +5,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
 import sqlalchemy.orm as so
+from sqlalchemy import any_
 import json
 import ast
 
@@ -15,7 +16,7 @@ from app.functions import (get_database_files, get_employer_by_id, get_vacancies
                            change_employer_relation_notes)
 from app.hh_api import get_hh_authorization_code, get_hh_tokens, refresh_hh_tokens, hh_search_vacancies, hh_vacancy_get, hh_employer_get
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, SearchForm, EmptyForm
-from app.models import User, Vacancy, get_vacancy, Employer, get_employer, VacancyRelation, get_relation
+from app.models import User, Vacancy, get_vacancy, Employer, get_employer, VacancyRelation, get_relation, DictRelationStatus
 from app.hh_dicts import DictProfessionalRoles, DictIndustries
 import re
 
@@ -241,38 +242,42 @@ def search():
     form = SearchForm()
     empty_form = EmptyForm()
     
-    params = {
-        'text': text,
-        'page': page,
-        'per_page': per_page,
-        'area': area,
-        'period': period,
-        'order_by': 'publication_time'
-    }
-    # Get vacancies list from HH API
-    response = hh_search_vacancies(params, current_user)
-    vacancies_json = response.json()
+    if text:
+        params = {
+            'text': text,
+            'page': page,
+            'per_page': per_page,
+            'area': area,
+            'period': period,
+            'order_by': 'publication_time'
+        }
+        # Get vacancies list from HH API
+        response = hh_search_vacancies(params, current_user)
+        vacancies_json = response.json()
 
-    # Vacancy JSON refactoring
-    for item in vacancies_json['items']:
-        
-        # Get vacancy relations from DB
-        if current_user.is_authenticated:
-            vacancy_relation = get_relation(current_user.id, int(item['id']))
+        # Vacancy JSON refactoring
+        for item in vacancies_json['items']:
+            
+            # Get vacancy relations from DB
+            if current_user.is_authenticated:
+                vacancy_relation = get_relation(current_user.id, int(item['id']))
 
-            if vacancy_relation:
-                item['custom_in_db'] = True
-                item['custom_hidden'] = vacancy_relation.hidden
+                if vacancy_relation:
+                    item['custom_in_db'] = True
+                    item['custom_hidden'] = vacancy_relation.hidden
 
-        # Format date for displaying in search results
-        datetime_obj = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
-        item['published_at'] = datetime_obj.strftime("%d-%m-%Y")
+            # Format date for displaying in search results
+            datetime_obj = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone.utc)
+            item['published_at'] = datetime_obj.strftime("%d-%m-%Y")
 
-        remove_tags = re.compile('<.*?>')
-        if item['snippet']['requirement']:
-            item['snippet']['requirement'] = re.sub(remove_tags, '', item['snippet']['requirement'])
-        if item['snippet']['responsibility']:
-            item['snippet']['responsibility'] = re.sub(remove_tags, '', item['snippet']['responsibility'])
+            remove_tags = re.compile('<.*?>')
+            if item['snippet']['requirement']:
+                item['snippet']['requirement'] = re.sub(remove_tags, '', item['snippet']['requirement'])
+            if item['snippet']['responsibility']:
+                item['snippet']['responsibility'] = re.sub(remove_tags, '', item['snippet']['responsibility'])
+    else:
+        vacancies_json = None
+        params = None
 
     return render_template('search.html', form=form, empty_form=empty_form, page=page, vacancies=vacancies_json, params=params, user=current_user)
 
@@ -433,6 +438,49 @@ def vacancy_update(vacancy, vacancy_snippet=None):
     return vacancy
 
 
+@app.route('/vacancy/_status_update', methods=['POST'])
+def vacancy_status_update():
+    form = EmptyForm()
+
+    if form.validate_on_submit():
+        new_status = request.form.get('status_update', None)
+        vacancy_hh_id = request.form.get('vacancy_hh_id', None)
+        if vacancy_hh_id == None:
+            return 'Error! Vacancy ID not found.'
+        
+        # Get Vacancy from DB
+        vacancy = get_vacancy(vacancy_hh_id)
+        if not vacancy:
+            return 'Error! Vacancy not found.'
+        
+        # Create relation
+        if current_user.is_authenticated:
+            # Get vacancy relation from DB
+            relation = get_relation(current_user.id, int(vacancy_hh_id))
+
+            if not relation:
+                app.logger.debug('New relation')
+                relation = VacancyRelation(user_id=current_user.id, vacancy_id=vacancy.id)
+                db.session.add(relation)
+            else:
+                app.logger.debug('Existing relation')
+            
+            relation_status_list = db.session.scalars(DictRelationStatus.query).all()
+            relation_status_id_list = [result.id for result in relation_status_list]
+
+            if new_status in relation_status_id_list:
+                relation.relation_status_id = new_status
+                app.logger.debug(f'RelationStatus updated to {new_status}')
+
+        db.session.commit()
+
+    else:
+        # Redirect if form not validated
+        return 'Form not validated', 500
+
+    return redirect(url_for('vacancy_detail', vacancy_hh_id=vacancy_hh_id))
+
+
 @app.route('/vacancy/_save', methods=['POST'])
 def vacancy_save_or_update():
     form = EmptyForm()
@@ -461,12 +509,12 @@ def vacancy_save_or_update():
 
             if not relation:
                 app.logger.debug('New relation')
-                relation = VacancyRelation(user_id=current_user.id, vacancy_id=vacancy.id)
+                relation = VacancyRelation(user_id=current_user.id, vacancy_id=vacancy.id, relation_status_id='new')
                 db.session.add(relation)
             else:
                 app.logger.debug('Existing relation')
 
-            relation.relations = json.dumps(vacancy.relations)
+            relation.hh_relations = vacancy.relations
             app.logger.debug(relation)
 
             # Actions to "Save", "Hide", "Unhide" buttons clicked
@@ -506,3 +554,46 @@ def vacancy_save_or_update():
         return 'Form not validated', 500
     
     return 'ok'
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    relation_status = request.args.get('show', 'all', str)
+    relation_hidden = request.args.get('hidden', False, bool)
+    app.logger.debug(relation_hidden)
+    app.logger.debug(relation_status)
+    
+    relation_status_list = db.session.scalars(DictRelationStatus.query).all()
+    relation_status_id_list = [result.id for result in relation_status_list]
+
+    if relation_status == 'hidden':
+        vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == True).order_by(Vacancy.published_at.desc())).all()
+    elif relation_status == 'all':
+        vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == False).order_by(Vacancy.published_at.desc())).all()
+    elif relation_status in relation_status_id_list:
+        if not relation_hidden:
+            vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == False).where(VacancyRelation.relation_status_id == relation_status).order_by(Vacancy.published_at.desc())).all()
+        else:
+            vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.relation_status_id == relation_status).order_by(Vacancy.published_at.desc())).all()
+    else:
+        vacancies = None
+
+    # Format fields for vacancies rendering page
+    if vacancies:
+        for vacancy in vacancies:
+            vacancy.salary_json = json.loads(vacancy.salary) if vacancy.salary else None
+            vacancy.published_at_formatted = vacancy.published_at.strftime("%d-%m-%Y")
+            vacancy.key_skills_json = json.loads(vacancy.key_skills) if vacancy.key_skills else None
+
+            remove_tags = re.compile('<.*?>')
+            if vacancy.description:
+                vacancy.description = re.sub(remove_tags, '', vacancy.description)
+
+            # Get vacancy relations from DB
+            if current_user.is_authenticated:
+                vacancy.relation = get_relation(current_user.id, int(vacancy.hh_id))
+
+    # relation_status = db.session.scalars(DictRelationStatus.query).all()
+    form = EmptyForm()
+
+    return render_template('dashboard.html', user=current_user, vacancies=vacancies, show=relation_status, form=form, relation_status_list=relation_status_list)

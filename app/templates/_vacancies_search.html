@@ -29,11 +29,11 @@
             ">
             <td><a href="{{ vacancy['alternate_url'] }}" target="_blank">{{ vacancy['id'] }}</a></td>
             <td>
-                <form id="vacancyForm{{ vacancy['id'] }}" action="{{ url_for('vacancy_detail', vacancy_hh_id=vacancy['id']) }}" method="post">
+                <!-- <form id="vacancyForm{{ vacancy['id'] }}" action="{{ url_for('vacancy_detail', vacancy_hh_id=vacancy['id']) }}" method="post">
                     <input id="vacancy_snippet" name="vacancy_snippet" type="hidden" value="{{ vacancy['snippet'] }}">
-                    <!-- <a href="#" onclick="parentNode.submit();">{{ vacancy['name'] }}</a> -->
                     <button class="button-submit-link" type="submit">{{ vacancy['name'] }}</button>
-                </form>
+                </form> -->
+                <a href="{{ url_for('vacancy_detail', vacancy_hh_id=vacancy['id'])}}">{{ vacancy['name'] }}</a>
             </td>
             <td>{{ vacancy['area']['name'] }}</td>
             <td>{{ vacancy['schedule']['name'] }}</td>
@@ -49,19 +49,19 @@
                     {{ form.hidden_tag() }}
 
                     {% if not vacancy['custom_hidden'] %}
-                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
                         Скрыть
                     </button>
                     {% else %}
-                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                    <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
                         Показать
                     </button>
                     {% endif %}
                 
                     {% if not vacancy['custom_in_db'] %}
-                    <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-primary" type="button">Сохранить</button>
+                    <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-sm btn-primary" type="button">Сохранить</button>
                     {% else %}
-                    <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-success" type="button">Обновить</button>
+                    <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-sm btn-success" type="button">Обновить</button>
                     {% endif %}
 
                 </form>
@@ -75,12 +75,11 @@
                 <div id="collapse{{ vacancy['id'] }}" class="container collapse {{ 'show' if not vacancy['custom_hidden'] }}">
                     <div class="row pt-2">
                         <div class="col">
-                            <p><strong>Обязанности</strong>: {{ vacancy['snippet']['responsibility'] }}</p>
+                            <p><strong>Обязанности</strong>: {{ vacancy['snippet']['responsibility'] | safe }}</p>
                             <p><strong>Требования</strong>: {{ vacancy['snippet']['requirement'] | safe }}</p>
                         </div>
                     </div>
                 </div>
-            </form>
             </td>
         </tr>
         {% endfor %}
