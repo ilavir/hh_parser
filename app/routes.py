@@ -555,15 +555,40 @@ def vacancy_save_or_update():
     
     return 'ok'
 
+
+@app.route('/vacancy/_update_bulk', methods=['POST'])
+def vacancy_update_bulk():
+    checked_vacancies = request.form.getlist('checkedItems', None)
+    app.logger.debug(checked_vacancies)
+    relation_status = request.form.get('show', 'all', str)
+
+    form = EmptyForm()
+
+    if form.validate_on_submit():
+
+        if checked_vacancies:
+            for vacancy_hh_id in checked_vacancies:
+                vacancy = get_vacancy(vacancy_hh_id)
+                relation = get_relation(current_user.id, int(vacancy_hh_id))
+                vacancy = vacancy_update(vacancy)
+                relation.hh_relations = vacancy.relations
+                app.logger.debug(f'vacancy_update_bulk(): Vacancy {vacancy} updated.')
+                db.session.commit()
+
+        return redirect(url_for('dashboard', show=relation_status))
+    
+    else:
+        # Redirect if form not validated
+        return 'Form not validated', 500
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     relation_status = request.args.get('show', 'all', str)
     relation_hidden = request.args.get('hidden', False, bool)
-    app.logger.debug(relation_hidden)
-    app.logger.debug(relation_status)
     
-    relation_status_list = db.session.scalars(DictRelationStatus.query).all()
+    relation_status_list = db.session.scalars(DictRelationStatus.query.order_by(DictRelationStatus.listorder)).all()
     relation_status_id_list = [result.id for result in relation_status_list]
 
     if relation_status == 'hidden':
@@ -585,15 +610,15 @@ def dashboard():
             vacancy.published_at_formatted = vacancy.published_at.strftime("%d-%m-%Y")
             vacancy.key_skills_json = json.loads(vacancy.key_skills) if vacancy.key_skills else None
 
-            remove_tags = re.compile('<.*?>')
+            # Remove tags in description
             if vacancy.description:
+                remove_tags = re.compile('<.*?>')
                 vacancy.description = re.sub(remove_tags, '', vacancy.description)
 
             # Get vacancy relations from DB
             if current_user.is_authenticated:
                 vacancy.relation = get_relation(current_user.id, int(vacancy.hh_id))
 
-    # relation_status = db.session.scalars(DictRelationStatus.query).all()
     form = EmptyForm()
 
     return render_template('dashboard.html', user=current_user, vacancies=vacancies, show=relation_status, form=form, relation_status_list=relation_status_list)

@@ -7,35 +7,49 @@
             color: var(--bs-alert-color);
             background-color: var(--bs-alert-bg);
         }
+        .color-new {
+            color: rgba(var(--bs-primary-rgb),var(--bs-text-opacity))!important;
+        }
+        .color-applied {
+            color: rgba(var(--bs-info-rgb),var(--bs-text-opacity))!important;
+        }
+        .color-interview {
+            color: rgba(var(--bs-success-rgb),var(--bs-text-opacity))!important;
+        }
+        .color-rejected {
+            color: rgba(var(--bs-danger-rgb),var(--bs-text-opacity))!important;
+        }
+        .color-offer {
+            color: rgba(var(--bs-warning-rgb),var(--bs-text-opacity))!important;
+        }
+        .color-unsuitable, .color-archived, .color-hidden {
+            color: rgba(var(--bs-secondary-rgb),var(--bs-text-opacity))!important;
+        }
     </style>
 {% endblock %}
 {% block content %}
-<div class="container">
+<div class="container mb-4">
     <div class="row mb-4">
         <div class="col text-center">
             <h1>Dashboard</h1>
         </div>
     </div>
+    <div class="row mb-1">
+        <div class="col text-end">
+            <form id="updateBulkForm" action="{{ url_for('vacancy_update_bulk') }}" method="post">
+                {{ form.hidden_tag() }}
+                <input id="updateBulkShow" name="show" type="hidden" value="{{ show }}">
+                <button id="sendCheckedButton" class="btn btn-sm btn-success" type="submit">Обновить выделенные</button>
+            </form>
+        </div>
+    </div>
     <div class="row">
         <ul class="nav nav-tabs">
-            {% set status_applied = relation_status_list[0] if relation_status_list else None %}
-            {% set status_interview = relation_status_list[1] if relation_status_list else None %}
-            {% set status_rejected = relation_status_list[2] if relation_status_list else None %}
-            {% set status_offer = relation_status_list[3] if relation_status_list else None %}
-            {% set status_unsuitable = relation_status_list[4] if relation_status_list else None %}
-            {% set status_archived = relation_status_list[5] if relation_status_list else None %}
-            {% set status_hidden = relation_status_list[6] if relation_status_list else None %}
-            {% set status_new = relation_status_list[7] if relation_status_list else None %}
+            {% for status in relation_status_list %}
+            <li class="nav-item"><a href="{{ url_for('dashboard', show=status.id) }}" class="nav-link text-primary color-{{ status.id }} {{ 'active' if show == status.id }}">{{ status.name }}</a></li>
+            {% endfor %}
             <li class="nav-item"><a href="{{ url_for('dashboard', show='all') }}" class="nav-link {{ 'active' if show == 'all' }}">Мои вакансии</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_new.id) }}" class="nav-link text-primary {{ 'active' if show == status_new.id }}">{{ status_new.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_applied.id) }}" class="nav-link text-info {{ 'active' if show == status_applied.id }}">{{ status_applied.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_interview.id) }}" class="nav-link text-success {{ 'active' if show == status_interview.id }}">{{ status_interview.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_rejected.id) }}" class="nav-link text-danger {{ 'active' if show == status_rejected.id }}">{{ status_rejected.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_offer.id) }}" class="nav-link text-warning {{ 'active' if show == status_offer.id }}">{{ status_offer.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_unsuitable.id) }}" class="nav-link text-secondary {{ 'active' if show == status_unsuitable.id }}">{{ status_unsuitable.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_archived.id) }}" class="nav-link text-secondary {{ 'active' if show == status_archived.id }}">{{ status_archived.name }}</a></li>
-            <li class="nav-item"><a href="{{ url_for('dashboard', show=status_hidden.id) }}" class="nav-link text-secondary {{ 'active' if show == status_hidden.id }}">{{ status_hidden.name }}</a></li>
-        </ul>
+       </ul>
     </div>
     <div class="row">
         <div class="col">
@@ -49,7 +63,7 @@
                         <th scope="col">Зарплата</th>
                         <th scope="col">Работодатель</th>
                         <th scope="col">Обновлено</th>
-                        <th scope="col" class="text-center"><!-- <a href="#">Выделить</a> --></th>
+                        <th colspan="2" scope="col" class="text-center"><a id="checkAllLink" href="javascript:void(0)">Выделить</a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,21 +94,21 @@
                                 {{ form.hidden_tag() }}
             
                                 {% if not vacancy.relation.hidden %}
-                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm mb-1 btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
                                     Скрыть
                                 </button>
                                 {% else %}
-                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
+                                <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm mb-1 btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
                                     Показать
                                 </button>
-                                {% endif %}
+                                {% endif %}<br />
                                 <button data-action="update" onclick="submitForm(this.form, 'update')" class="btn btn-sm btn-success" type="button">Обновить</button>
                             </form>
                         </td>
-                        <!-- <td class="text-center"><input class="form-check-input" type="checkbox" name="vacancy_checkbox" value=""></td> -->
+                        <td class="text-center"><input id="{{ vacancy.hh_id }}" class="form-check-input item-checkbox" type="checkbox" name="vacancy_checkbox" value=""></td>
                     </tr>
                     <tr class="bg-light">
-                        <td class="p-0" colspan="8">
+                        <td class="p-0" colspan="9">
                             <div id="collapse{{ vacancy['id'] }}" class="container collapse {{ 'show' if not vacancy.relation.hidden }}">
                                 <div class="row pt-2">
                                     <div class="col">
@@ -135,7 +149,7 @@
                         // Update button color and name based on response
                         var button = form.querySelector('button[data-action="' + action + '"]');
                         button.textContent = response.buttonText;
-                        button.className = "btn btn-sm " + response.buttonClass;
+                        button.className = "btn btn-sm mb-1 " + response.buttonClass;
                         // Change background color of parent <tr>
                         var tr = button.closest('tr');
                         if (response.backgroundClass1) {
@@ -150,5 +164,46 @@
             };
             xhr.send(formData);
         }
-    </script>       
+    </script>
+
+    <script>
+        document.getElementById("checkAllLink").addEventListener("click", function() {
+            var checkboxes = document.querySelectorAll('.item-checkbox');
+            var checkAllButton = document.getElementById('checkAllLink');
+            var allChecked = true;
+            checkboxes.forEach(function(checkbox) {
+                if (!checkbox.checked) {
+                    allChecked = false;
+                }
+            });
+            checkboxes.forEach(function(checkbox) {
+                if (allChecked) {
+                    checkbox.checked = false;
+                    // checkAllButton.textContent = "Check All Items";
+                } else {
+                    checkbox.checked = true;
+                    // checkAllButton.textContent = "Uncheck All Items";
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById("sendCheckedButton").addEventListener("click", function(event) {
+            var checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            var checkedIds = [];
+            checkboxes.forEach(function(checkbox) {
+                checkedIds.push(checkbox.id);
+            });
+
+            var form = document.getElementById('updateBulkForm');
+            checkedIds.forEach(function(id) {
+                var input = document.createElement('input');
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', 'checkedItems');
+                input.setAttribute('value', id);
+                form.appendChild(input);
+            });
+        });
+    </script>
 {% endblock %}

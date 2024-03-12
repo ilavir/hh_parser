@@ -264,8 +264,9 @@ def get_vacancy(hh_id):
 
 
 class DictRelationStatus(db.Model):
-    id: so.Mapped[str] = so.mapped_column(sa.String(64), primary_key=True)
-    name: so.Mapped[str] = so.mapped_column(sa.String(128), unique=True)
+    id: so.Mapped[str] = so.mapped_column(sa.String(32), primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(32), unique=True)
+    listorder: so.Mapped[Optional[int]] = so.mapped_column()
 
     relations: so.Mapped['VacancyRelation'] = so.relationship(back_populates='status')
     
@@ -274,7 +275,7 @@ class DictRelationStatus(db.Model):
     
 
 def init_relation_status():
-    for status in [('new', 'Новые'), ('applied', 'Откликнулся'), ('interview', 'Интервью'), ('rejected', 'Отказ'), ('offer', 'Оффер'), ('unsuitable', 'Не подходит'), ('archived', 'Архив')]:
+    for status in [('new', 'Новые'), ('applied', 'Откликнулся'), ('interview', 'Интервью'), ('rejected', 'Отказ'), ('offer', 'Оффер'), ('unsuitable', 'Не подходит'), ('archived', 'Архив'), ('hidden', 'Скрытые')]:
         new_item = DictRelationStatus(id=status[0], name=status[1])
         db.session.add(new_item)
 
