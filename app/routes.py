@@ -28,53 +28,11 @@ def before_request():
         db.session.commit()
 
 
-'''@app.route('/', methods=['POST', 'GET'])
-@login_required
-def index():
-    db_files = get_database_files()
-    selected_db = request.args.get('db', db_files[0] if db_files else None)
-
-    if not selected_db:
-        return 'No databases found.'
-    elif selected_db not in db_files:
-        return 'No database found.'
-
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    offset = (page - 1) * per_page
-
-    relation_status_list = get_vacancy_relation_status_list(selected_db)
-    vacancies, total_vacancies = get_vacancies(
-        selected_db, offset=offset, per_page=per_page)
-    pagination = {'page': page, 'per_page': per_page,
-                  'total': total_vacancies, 'pages': ceil(total_vacancies / per_page)}
-
-    return render_template('index.html', db_files=db_files, selected_db=selected_db,
-                           vacancies=vacancies, pagination=pagination, status_list=relation_status_list)
-'''
-
 @app.route('/')
 def index():
 
     return redirect(url_for('search'))
 
-'''@app.route('/update_content', methods=['POST'])
-def update_content():
-    selected_db = request.form.get('db')
-    vacancy_id = request.form.get('vacancy_id', None)
-    relation_status = request.form.get('relation_status', None)
-    relation_favorite = request.form.get('favorite', None)
-
-    if vacancy_id and relation_favorite:
-        change_vacancy_relation_favorite(
-            selected_db, vacancy_id, relation_favorite)
-
-    if vacancy_id and relation_status:
-        change_vacancy_relation_status(
-            selected_db, vacancy_id, relation_status)
-
-    return 'Good'
-'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -217,6 +175,9 @@ def hh_auth():
             db.session.commit()
             app.logger.info('New tokens are obtained and updated.')
             flash('SUCCESS! New tokens are obtained and updated.')
+            
+            user.check_hh_auth()
+            session['hh_auth'] = user.hh_auth
         else:
             flash(f'ERROR! Failed to obtain tokens. Tokens are not updated.')
             app.logger.error(f'Failed to obtain tokens. Tokens are not updated.')
@@ -422,8 +383,8 @@ def vacancy_update(vacancy, vacancy_snippet=None):
 
     if vacancy_response.status_code == 404:
         app.logger.debug('vacancy_update(): Vacancy not found')
-        flash(f'WARNING! Vacancy {vacancy} was deleted from HH.')
-        # return '404 Error: Vacancy not found', 404
+        flash(f'WARNING! {vacancy} was deleted from HH.')
+        return vacancy_response
     
     vacancy_json = vacancy_response.json()
     # try:
@@ -497,10 +458,12 @@ def vacancy_save_or_update():
             app.logger.debug('vacancy_save_or_update(): Vacancy not in DB')
             vacancy = Vacancy(hh_id=vacancy_hh_id)
             vacancy = vacancy_save(vacancy, vacancy_snippet)
-            if vacancy == 404:
+            if type(vacancy) is not Vacancy:
                 return '404 Error: Vacancy not found', 404
         else:
             vacancy = vacancy_update(vacancy, vacancy_snippet)
+            if type(vacancy) is not Vacancy:
+                return '404 Error: Vacancy not found', 404
 
         # Create relation
         if current_user.is_authenticated:
@@ -571,8 +534,12 @@ def vacancy_update_bulk():
                 vacancy = get_vacancy(vacancy_hh_id)
                 relation = get_relation(current_user.id, int(vacancy_hh_id))
                 vacancy = vacancy_update(vacancy)
+
+                if type(vacancy) is not Vacancy:
+                    continue
+                
                 relation.hh_relations = vacancy.relations
-                app.logger.debug(f'vacancy_update_bulk(): Vacancy {vacancy} updated.')
+                app.logger.debug(f'vacancy_update_bulk(): {vacancy} updated.')
                 db.session.commit()
 
         return redirect(url_for('dashboard', show=relation_status))

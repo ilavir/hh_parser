@@ -125,7 +125,7 @@ def hh_search_vacancies(params, user):
         if response.status_code == 200:
             return response
         if response.status_code == 403:
-            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            flash(f'ERROR! Bad request. Please, recheck HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
     
@@ -149,12 +149,12 @@ def hh_vacancy_get(hh_id, user):
         if response.status_code == 200:
             return response
         if response.status_code == 403:
-            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            flash(f'ERROR! Bad request. Please, recheck HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
-    else:
-        response = requests.get(api_url, headers=headers)
-        app.logger.info(f'Response Status Code: {response.status_code}')
+
+    response = requests.get(api_url, headers=headers)
+    app.logger.info(f'Response Status Code: {response.status_code}')
 
     return response
 
@@ -173,11 +173,11 @@ def hh_employer_get(hh_id, user):
         if response.status_code == 200:
             return response
         if response.status_code == 403:
-            flash(f'ERROR! Bad request. Please, check HH Oauth Status in your profile.')
+            flash(f'ERROR! Bad request. Please, recheck HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
-    else:
-        response = requests.get(api_url, headers=headers)
-        app.logger.info(f'Response Status Code: {response.status_code}')
+
+    response = requests.get(api_url, headers=headers)
+    app.logger.info(f'Response Status Code: {response.status_code}')
 
     return response
