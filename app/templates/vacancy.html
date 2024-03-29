@@ -42,7 +42,7 @@
         <div class="col-2 text-end">
             {% if user.is_authenticated %}
             <form id="hiddenForm{{ vacancy['hh_id'] }}" class="" action="{{ url_for('vacancy_save_or_update') }}" method="post">
-                
+
                 <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy['hh_id'] }}">
                 <input id="vacancy_snippet" name="vacancy_snippet" type="hidden" value="{{ vacancy['snippet'] }}">
                 {{ form.hidden_tag() }}
@@ -52,7 +52,7 @@
                 {% else %}
                 <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm btn-outline-secondary btn-sm" type="button">Показать</button>
                 {% endif %}
-            
+
                 {% if not relation %}
                 <button data-action="save" onclick="submitForm(this.form, 'save')" class="btn btn-sm btn-primary" type="button">Сохранить</button>
                 {% else %}
@@ -86,8 +86,12 @@
             <p class="mb-0"><strong>График:</strong> {{ vacancy.schedule.name }}</p>
         </div>
         <div class="col-6 text-end">
-            <p><a href="{{ url_for('employer_detail', employer_hh_id=vacancy.employer.hh_id) }}">{{ vacancy.employer.name }}</a> (<a href="{{ vacancy.employer.alternate_url }}" target="_blank">{{ vacancy.employer.hh_id }}</a>)</p>
-            <!-- {% if employer_relation_notes %}<p><pre>{{ employer_relation_notes }}</pre></p>{% endif %} -->
+            {% if vacancy.employer %}
+                <p><a href="{{ url_for('employer_detail', employer_hh_id=vacancy.employer.hh_id) }}">{{ vacancy.employer.name }}</a> (<a href="{{ vacancy.employer.alternate_url }}" target="_blank">{{ vacancy.employer.hh_id }}</a>)</p>
+                <!-- {% if employer_relation_notes %}<p><pre>{{ employer_relation_notes }}</pre></p>{% endif %} -->
+            {% else %}
+                <p>Анонимная вакансия</p>
+            {% endif %}
             {% if vacancy.address_json %}
                 {% set address_raw = vacancy.address_json['raw'] %}
 
@@ -137,7 +141,7 @@
         function submitForm(form, action) {
             var formData = new FormData(form);
             formData.append("action", action);
-    
+
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "{{ url_for('vacancy_save_or_update') }}", true);
             xhr.onreadystatechange = function () {
@@ -162,5 +166,5 @@
             };
             xhr.send(formData);
         }
-    </script>       
+    </script>
 {% endblock %}

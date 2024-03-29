@@ -70,11 +70,14 @@
                     {% if vacancies %}
                     {% for vacancy in vacancies %}
                     <tr class="table-group-divider align-middle
-                    {{ 'bg-light' if vacancy.relation.hidden }}
-                    {{ 'highlight alert-danger' if vacancy.relation.hh_relations and 'got_rejection' in vacancy.relation.hh_relations }}
-                    {{ 'highlight alert-info ' if vacancy.relation.hh_relations and 'got_response' in vacancy.relation.hh_relations }}
-                    {{ 'highlight alert-success' if vacancy.relation.hh_relations and 'got_invitation' in vacancy.relation.hh_relations }}
-                    {{ 'highlight alert-secondary' if vacancy.archived }}
+                    {% if vacancy.archived %}
+                        {{ 'highlight alert-secondary' if vacancy.archived }}
+                    {% else %}
+                        {{ 'bg-light' if vacancy.relation.hidden }}
+                        {{ 'highlight alert-danger' if vacancy.relation.hh_relations and 'got_rejection' in vacancy.relation.hh_relations }}
+                        {{ 'highlight alert-info ' if vacancy.relation.hh_relations and 'got_response' in vacancy.relation.hh_relations }}
+                        {{ 'highlight alert-success' if vacancy.relation.hh_relations and 'got_invitation' in vacancy.relation.hh_relations }}
+                    {% endif %}
                     ">
                         <td><a href="{{ vacancy.alternate_url }}" target="_blank">{{ vacancy.hh_id }}</a></td>
                         <td><a href="{{ url_for('vacancy_detail', vacancy_hh_id=vacancy.hh_id) }}">{{ vacancy.name }}</a></td>
@@ -92,7 +95,7 @@
                             <form id="hiddenForm{{ vacancy.hh_id }}" class="" action="{{ url_for('vacancy_save_or_update') }}" method="post">
                                 <input id="vacancy_hh_id" name="vacancy_hh_id" type="hidden" value="{{ vacancy.hh_id }}">
                                 {{ form.hidden_tag() }}
-            
+
                                 {% if not vacancy.relation.hidden %}
                                 <button data-action="hide_unhide" onclick="submitForm(this.form, 'hide_unhide')" class="btn btn-sm mb-1 btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ vacancy['id'] }}" aria-expanded="false" aria-controls="collapse{{ vacancy['id'] }}">
                                     Скрыть
@@ -139,7 +142,7 @@
         function submitForm(form, action) {
             var formData = new FormData(form);
             formData.append("action", action);
-    
+
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "{{ url_for('vacancy_save_or_update') }}", true);
             xhr.onreadystatechange = function () {
