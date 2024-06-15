@@ -6,7 +6,7 @@ from app import app
 
 def check_hh_authorization(access_token):
     app.logger.info('Checking HH.ru OAuth Status...')
-    
+
     if access_token:
         headers = {
             'user-agent': 'api-test',
@@ -25,13 +25,13 @@ def check_hh_authorization(access_token):
     else:
         app.logger.warning('No ACCESS_TOKEN found.')
         flash('No Access Token found. Please, get new tokens from your profile.')
-        
+
     return False
 
 
 def refresh_hh_tokens(current_refresh_token):
     app.logger.info('Making a refresh tokens request to HH.ru API...')
-    
+
     # Step 2: Exchange authorization code for access token
     token_url = 'https://hh.ru/oauth/token'
     token_data = {
@@ -107,7 +107,7 @@ def get_hh_tokens(authorization_code):
         app.logger.warning(token_response.text)
         access_token = None
         refresh_token = None
-    
+
     return access_token, refresh_token
 
 
@@ -128,7 +128,7 @@ def hh_search_vacancies(params, user):
             flash(f'ERROR! Bad request. Please, recheck HH Oauth Status in your profile.')
             app.logger.warning(f'Bad request. Error message: {response.json()}')
             del headers['authorization']
-    
+
     response = requests.get(api_url, params=params, headers=headers)
     app.logger.info(f'Response Status Code: {response.status_code}')
 

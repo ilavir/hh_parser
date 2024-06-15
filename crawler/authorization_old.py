@@ -43,16 +43,16 @@ def check_hh_auth(user_id):
         }
 
         auth = requests.get('https://api.hh.ru/me', headers=headers)
-        
+
         if auth.status_code == 200:
             print(f"--- HH.ru API OAuth Status: {auth.status_code} OK ---")
             auth_status = True
         else:
             print(f"--- HH.ru API OAuth Status: {auth.status_code} ERROR ---")
-    
+
     else:
         print('ERROR: No Access and Refresh Tokens found.')
-    
+
     return auth_status, access_token, refresh_token
 
 def get_tokens():
@@ -111,7 +111,7 @@ def get_tokens():
         print(f'Failed to obtain access token. Status code: {token_response.status_code}')
         print(token_response.text)
         exit()
-    
+
     return access_token, refresh_token
 
 
