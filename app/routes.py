@@ -38,7 +38,7 @@ def index():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    
+
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -48,7 +48,7 @@ def login():
             flash('Invalid username or password')
 
             return redirect(url_for('login'))
-        
+
         login_user(user, remember=form.remember_me.data)
         flash(f'User {user.username} successfuly logged in.')
         user.check_hh_auth()
@@ -77,7 +77,7 @@ def register():
 
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    
+
     form = RegistrationForm()
 
     if form.validate_on_submit():
@@ -96,7 +96,7 @@ def register():
 @login_required
 def user(username):
     user = db.first_or_404(sa.select(User).where(User.username == username))
-    
+
     try:
         hh_auth = session['hh_auth']
     except:
@@ -117,7 +117,7 @@ def edit_profile():
         flash('Your changes have been saved.')
 
         return redirect(url_for('user', username=current_user.username))
-    
+
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.about_me.data = current_user.about_me
@@ -157,14 +157,14 @@ def hh_auth():
             flash('ERROR! Failed to obtain tokens. Tokens are not updated.')
 
         return redirect(url_for('user', username=current_user.username))
-    
+
     if action == 'check_status':
-        
+
         user.check_hh_auth()
         session['hh_auth'] = user.hh_auth
 
         return redirect(url_for('user', username=current_user.username))
-    
+
     elif action == 'refresh_tokens':
         current_refresh_token = user.refresh_token
         access_token, refresh_token = refresh_hh_tokens(current_refresh_token)
@@ -175,7 +175,7 @@ def hh_auth():
             db.session.commit()
             app.logger.info('New tokens are obtained and updated.')
             flash('SUCCESS! New tokens are obtained and updated.')
-            
+
             user.check_hh_auth()
             session['hh_auth'] = user.hh_auth
         else:
@@ -186,9 +186,9 @@ def hh_auth():
 
     elif action == 'get_tokens':
         oauth_url = get_hh_authorization_code()
-        
+
         return redirect(oauth_url)
-    
+
     return redirect(url_for('user', username=current_user.username))
 
 
@@ -202,7 +202,7 @@ def search():
 
     form = SearchForm()
     empty_form = EmptyForm()
-    
+
     if text:
         params = {
             'text': text,
@@ -218,7 +218,7 @@ def search():
 
         # Vacancy JSON refactoring
         for item in vacancies_json['items']:
-            
+
             # Get vacancy relations from DB
             if current_user.is_authenticated:
                 vacancy_relation = get_relation(current_user.id, int(item['id']))
@@ -280,9 +280,9 @@ def employer_save(employer):
         app.logger.debug('employer_save(): Employer not found')
 
         return 404
-    
+
     employer_json = employer_response.json()
-    
+
     employer.save_from_hh(employer_json)
     app.logger.debug(f'employer_save(): Employer added to DB: {employer}')
 
@@ -337,7 +337,7 @@ def vacancy_detail(vacancy_hh_id):
     vacancy.professional_roles_json = professional_roles
 
     form = EmptyForm()
-    
+
     return render_template('vacancy.html', vacancy=vacancy, user=current_user, relation=relation, form=form)
 
 
@@ -364,7 +364,7 @@ def vacancy_save(vacancy, vacancy_snippet=None):
             employer = employer_update(employer)
     else:
         employer = None
-    
+
     # vacancy = Vacancy(hh_id=vacancy_json['id'])
     try:
         vacancy_snippet_json = json.loads(vacancy_snippet) if vacancy_snippet else None
@@ -385,7 +385,7 @@ def vacancy_update(vacancy, vacancy_snippet=None):
         app.logger.debug('vacancy_update(): Vacancy not found')
         flash(f'WARNING! {vacancy} was deleted from HH.')
         return vacancy_response
-    
+
     vacancy_json = vacancy_response.json()
     # try:
     #     vacancy_snippet_json = json.loads(vacancy_snippet) if vacancy_snippet else None
@@ -408,12 +408,12 @@ def vacancy_status_update():
         vacancy_hh_id = request.form.get('vacancy_hh_id', None)
         if vacancy_hh_id == None:
             return 'Error! Vacancy ID not found.'
-        
+
         # Get Vacancy from DB
         vacancy = get_vacancy(vacancy_hh_id)
         if not vacancy:
             return 'Error! Vacancy not found.'
-        
+
         # Create relation
         if current_user.is_authenticated:
             # Get vacancy relation from DB
@@ -425,7 +425,7 @@ def vacancy_status_update():
                 db.session.add(relation)
             else:
                 app.logger.debug('Existing relation')
-            
+
             relation_status_list = db.session.scalars(DictRelationStatus.query).all()
             relation_status_id_list = [result.id for result in relation_status_list]
 
@@ -515,7 +515,7 @@ def vacancy_save_or_update():
     else:
         # Redirect if form not validated
         return 'Form not validated', 500
-    
+
     return 'ok'
 
 
@@ -537,13 +537,13 @@ def vacancy_update_bulk():
 
                 if type(vacancy) is not Vacancy:
                     continue
-                
+
                 relation.hh_relations = vacancy.relations
                 app.logger.debug(f'vacancy_update_bulk(): {vacancy} updated.')
                 db.session.commit()
 
         return redirect(url_for('dashboard', show=relation_status))
-    
+
     else:
         # Redirect if form not validated
         return 'Form not validated', 500
@@ -554,7 +554,7 @@ def vacancy_update_bulk():
 def dashboard():
     relation_status = request.args.get('show', 'all', str)
     relation_hidden = request.args.get('hidden', False, bool)
-    
+
     relation_status_list = db.session.scalars(DictRelationStatus.query.order_by(DictRelationStatus.listorder)).all()
     relation_status_id_list = [result.id for result in relation_status_list]
 

@@ -13,7 +13,7 @@ services:
   web:
     build:
       context: .
-    image: ilavir/hh-parser:1.1
+    image: ilavir/hh-parser
     stop_signal: SIGINT
     ports:
       - ${SELF_URL_PORT}:8000
@@ -57,4 +57,3 @@ volumes:
 # secrets:
 #   db-password:
 #     file: db/password.txt
-

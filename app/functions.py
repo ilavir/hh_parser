@@ -24,9 +24,12 @@ def db_connect(selected_db):
 def get_vacancies(selected_db, offset=0, per_page=20):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT vacancy.hh_id, vacancy.name AS vacancy_name, area.name AS area_name, schedule.name AS schedule_name, vacancy.salary,
-        employer.hh_id AS employer_hh_id, employer.name AS employer_name, vacancy.published_at, vacancy.snippet,
-        COALESCE(vacancy_relation.favorite, 0) AS effective_favorite, vacancy_relation.vacancy_relation_status_id, vacancy.vacancy_id,
+        SELECT vacancy.hh_id, vacancy.name AS vacancy_name,
+        area.name AS area_name, schedule.name AS schedule_name, vacancy.salary,
+        employer.hh_id AS employer_hh_id, employer.name AS employer_name,
+        vacancy.published_at, vacancy.snippet,
+        COALESCE(vacancy_relation.favorite, 0) AS effective_favorite,
+        vacancy_relation.vacancy_relation_status_id, vacancy.vacancy_id,
         vacancy.search_query
         FROM vacancy
         JOIN area ON vacancy.area_id = area.area_id
@@ -63,7 +66,8 @@ def change_vacancy_relation_favorite(selected_db, vacancy_id, relation_favorite)
     elif relation_favorite == '1':
         relation_favorite = 1
 
-    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, favorite) VALUES (?, ?)"""
+    query = """INSERT OR IGNORE INTO vacancy_relation (vacancy_id, favorite)
+            VALUES (?, ?)"""
     cursor.execute(query, (vacancy_id, relation_favorite))
 
     query = """UPDATE vacancy_relation SET favorite = ? WHERE vacancy_id = ?"""
@@ -71,7 +75,6 @@ def change_vacancy_relation_favorite(selected_db, vacancy_id, relation_favorite)
 
     conn.commit()
     conn.close()
-
 
 
 def get_vacancy_relation_status_list(selected_db):
@@ -89,11 +92,11 @@ def get_vacancy_relation_status_list(selected_db):
 def get_vacancy_by_id(selected_db, vacancy_hh_id):
     conn, cursor = db_connect(selected_db)
     query = """
-        SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived, published_at,
-        vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills, professional_roles.name,
-        employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name, address, contacts,
-        vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id, vacancy_relation.notes, vacancy_relation.conversation,
-        employer_relation.notes
+        SELECT vacancy.vacancy_id, vacancy.hh_id, vacancy.url, vacancy.alternate_url, vacancy.name, archived,
+        published_at, vacancy_type.name, salary, experience.name, schedule.name, vacancy_description, vacancy_skills,
+        professional_roles.name, employer.hh_id, employment.name, employer.name, employer.alternate_url, area.name,
+        address, contacts, vacancy_relation.favorite, vacancy_relation.vacancy_relation_status_id,
+        vacancy_relation.notes, vacancy_relation.conversation, employer_relation.notes
         FROM vacancy
         JOIN vacancy_type ON vacancy.type_id = vacancy_type.type_id
         JOIN experience ON vacancy.experience_id = experience.experience_id
@@ -113,7 +116,8 @@ def get_vacancy_by_id(selected_db, vacancy_hh_id):
     dt_object = datetime.strptime(vacancy[6], "%Y-%m-%dT%H:%M:%S%z")
     formatted_date = dt_object.strftime("%d.%m.%Y")
     vacancy = vacancy[:6] + (formatted_date,) + (vacancy[7],) + (json.loads(vacancy[8]),) + vacancy[9:12] + (
-        json.loads(vacancy[12]),) + vacancy[13:19] + (json.loads(vacancy[19]),) + (json.loads(vacancy[20]),) + vacancy[21:]
+        json.loads(vacancy[12]),) + vacancy[13:19] + (json.loads(vacancy[19]),) + (json.loads(vacancy[20]),)
+    + vacancy[21:]
 
     conn.close()
 
@@ -150,7 +154,6 @@ def change_vacancy_relation_notes(selected_db, vacancy_id, notes_content):
 
     conn.commit()
     conn.close()
-
 
 
 def change_vacancy_relation_conversation_content(selected_db, vacancy_id, conversation_content):
