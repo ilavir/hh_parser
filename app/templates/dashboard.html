@@ -1,3 +1,28 @@
+{% macro render_pagination(pagination, endpoint) %}
+<!-- <div class=page-items>
+    {{ pagination.first }} - {{ pagination.last }} of {{ pagination.total }}
+</div> -->
+<ul class="pagination justify-content-center">
+    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+        <a href="{{ url_for(endpoint, page=pagination.prev_num, show=show) }}" class="page-link">Предыдущая</a>
+    </li>
+    {% for page in pagination.iter_pages() %}
+    {% if page %}
+        {% if page != pagination.page %}
+        <li class="page-item"><a href="{{ url_for(endpoint, page=page, show=show) }}" class="page-link">{{ page }}</a></li>
+        {% else %}
+        <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+        {% endif %}
+    {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+    {% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+        <a href="{{ url_for(endpoint, page=pagination.next_num, show=show) }}" class="page-link">Следующая</a>
+    </li>
+</ul>
+{% endmacro %}
+
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block head %}
@@ -51,6 +76,13 @@
             <li class="nav-item"><a href="{{ url_for('dashboard', show='all') }}" class="nav-link {{ 'active' if show == 'all' }}">Мои вакансии</a></li>
        </ul>
     </div>
+    <!-- dashboard pagination -->
+    <div class="row mt-4">
+        <div class="col">
+            {{ render_pagination(pagination, 'dashboard') }}
+        </div>
+    </div>
+    <!-- /dashboard pagination -->
     <div class="row">
         <div class="col">
             <table class="table">
@@ -130,10 +162,20 @@
                     </tr>
                     {% endfor %}
                     {% endif %}
+
                 </tbody>
             </table>
         </div>
     </div>
+
+    <!-- dashboard pagination -->
+    <div class="row mt-4">
+        <div class="col">
+            {{ render_pagination(pagination, 'dashboard') }}
+        </div>
+    </div>
+    <!-- /dashboard pagination -->
+
 </div>
 {% endblock %}
 {% block js %}

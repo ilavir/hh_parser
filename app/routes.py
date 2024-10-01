@@ -260,7 +260,7 @@ def employer_detail(employer_hh_id):
 
     db.session.commit()
 
-    ## Render employer details page
+    # Render employer details page
     # Get industry ID's from Dictionary and convert them to list of names for displaying in employer details
     industries = []
     industries_json = json.loads(employer.industries) if employer.industries else None
@@ -287,6 +287,7 @@ def employer_save(employer):
     app.logger.debug(f'employer_save(): Employer added to DB: {employer}')
 
     return employer
+
 
 def employer_update(employer):
 
@@ -319,7 +320,7 @@ def vacancy_detail(vacancy_hh_id):
     else:
         relation = None
 
-    ## Render vacancy details page
+    # Render vacancy details page
     # Convert strings to JSON for displaying in vacancy details
     vacancy.salary_json = json.loads(vacancy.salary) if vacancy.salary else None
     vacancy.address_json = json.loads(vacancy.address) if vacancy.address else None
@@ -368,7 +369,7 @@ def vacancy_save(vacancy, vacancy_snippet=None):
     # vacancy = Vacancy(hh_id=vacancy_json['id'])
     try:
         vacancy_snippet_json = json.loads(vacancy_snippet) if vacancy_snippet else None
-    except ValueError as e:
+    except ValueError:
         vacancy_snippet_json = ast.literal_eval(vacancy_snippet) if vacancy_snippet else None
     vacancy.snippet = json.dumps(vacancy_snippet_json, ensure_ascii=False) if vacancy_snippet_json else None
     vacancy.employer = employer
@@ -377,6 +378,7 @@ def vacancy_save(vacancy, vacancy_snippet=None):
     app.logger.debug(f'vacancy_save(): Vacancy added to DB: {vacancy}')
 
     return vacancy
+
 
 def vacancy_update(vacancy, vacancy_snippet=None):
     vacancy_response = hh_vacancy_get(vacancy.hh_id, current_user)
@@ -406,7 +408,7 @@ def vacancy_status_update():
     if form.validate_on_submit():
         new_status = request.form.get('status_update', None)
         vacancy_hh_id = request.form.get('vacancy_hh_id', None)
-        if vacancy_hh_id == None:
+        if vacancy_hh_id is None:
             return 'Error! Vacancy ID not found.'
 
         # Get Vacancy from DB
@@ -554,19 +556,29 @@ def vacancy_update_bulk():
 def dashboard():
     relation_status = request.args.get('show', 'all', str)
     relation_hidden = request.args.get('hidden', False, bool)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', app.config['ITEMS_PER_PAGE'], type=int)
 
     relation_status_list = db.session.scalars(DictRelationStatus.query.order_by(DictRelationStatus.listorder)).all()
     relation_status_id_list = [result.id for result in relation_status_list]
 
     if relation_status == 'hidden':
-        vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == True).order_by(Vacancy.published_at.desc())).all()
+        query = current_user.vacancies.select().where(VacancyRelation.hidden == True).order_by(Vacancy.published_at.desc())
+        vacancies = db.paginate(query, page=page, per_page=per_page, error_out=False).items
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
     elif relation_status == 'all':
-        vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == False).order_by(Vacancy.published_at.desc())).all()
+        query = current_user.vacancies.select().where(VacancyRelation.hidden == False).order_by(Vacancy.published_at.desc())
+        vacancies = db.paginate(query, page=page, per_page=per_page, error_out=False).items
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
     elif relation_status in relation_status_id_list:
         if not relation_hidden:
-            vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.hidden == False).where(VacancyRelation.relation_status_id == relation_status).order_by(Vacancy.published_at.desc())).all()
+            query = current_user.vacancies.select().where(sa.and_(VacancyRelation.hidden == False, VacancyRelation.relation_status_id == relation_status)).order_by(Vacancy.published_at.desc())
+            vacancies = db.paginate(query, page=page, per_page=per_page, error_out=False).items
+            pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
         else:
-            vacancies = db.session.scalars(current_user.vacancies.select().where(VacancyRelation.relation_status_id == relation_status).order_by(Vacancy.published_at.desc())).all()
+            query = current_user.vacancies.select().where(VacancyRelation.relation_status_id == relation_status).order_by(Vacancy.published_at.desc())
+            vacancies = db.paginate(query, page=page, per_page=per_page, error_out=False).items
+            pagination = db.paginate(query, page=page, per_page=per_page, error_out=False)
     else:
         vacancies = None
 
@@ -588,4 +600,4 @@ def dashboard():
 
     form = EmptyForm()
 
-    return render_template('dashboard.html', user=current_user, vacancies=vacancies, show=relation_status, form=form, relation_status_list=relation_status_list)
+    return render_template('dashboard.html', user=current_user, vacancies=vacancies, pagination=pagination, show=relation_status, form=form, relation_status_list=relation_status_list)
