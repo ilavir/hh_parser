@@ -20,7 +20,7 @@ services:
     env_file:
       - .env
     volumes:
-      - sqlite:${DB_PATH}
+      - ./db:${DB_PATH}
 
 volumes:
   sqlite:
